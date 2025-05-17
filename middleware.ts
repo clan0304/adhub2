@@ -14,55 +14,70 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // IMPORTANT: Auth route should bypass most checks to prevent infinite loops
+  // Define route categories
   const isAuthRoute = pathname === '/auth';
-  if (isAuthRoute) {
-    return NextResponse.next();
-  }
+  const isProfileSetupRoute = pathname === '/profile-setup';
 
-  // Other public routes that don't require redirects
-  const isPublicRoute = pathname === '/' || pathname === '/auth/callback';
+  // Define which routes require authentication
+  // Add your protected routes here - routes that require login
+  const protectedRoutes = ['/profile'];
+  const requiresAuth = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
+  // Get authenticated state
   const supabase = await createClient();
-
-  // Get authenticated user
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // If user is not authenticated and trying to access a protected route
-  if (!user && !isPublicRoute) {
-    // Redirect unauthenticated users to auth page
-    return NextResponse.redirect(new URL('/auth', request.url));
+  // CASE 1: User is not authenticated
+  if (!user) {
+    // If trying to access protected routes, redirect to auth
+    if (requiresAuth) {
+      return NextResponse.redirect(new URL('/auth', request.url));
+    }
+
+    // If trying to access profile setup without being logged in, redirect to auth
+    if (isProfileSetupRoute) {
+      return NextResponse.redirect(new URL('/auth', request.url));
+    }
+
+    // For all other public routes, allow access
+    return NextResponse.next();
   }
 
-  // If user is authenticated
+  // CASE 2: User is authenticated
   if (user) {
-    try {
-      // Try to get user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_profile_completed')
-        .eq('id', user.id)
-        .single();
+    // If on auth page and already authenticated, redirect to home
+    if (isAuthRoute) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
 
-      // If profile doesn't exist or is not completed, and not already on profile setup
-      if (
-        (profileError || !profile || !profile.is_profile_completed) &&
-        pathname !== '/profile-setup'
-      ) {
-        return NextResponse.redirect(new URL('/profile-setup', request.url));
-      }
+    // Skip profile check for profile setup page to prevent redirect loops
+    if (isProfileSetupRoute) {
+      return NextResponse.next();
+    }
 
-      // If profile is completed and on profile setup, redirect to dashboard
-      if (profile?.is_profile_completed && pathname === '/profile-setup') {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    // For protected routes, check if profile is completed
+    if (requiresAuth) {
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_profile_completed')
+          .eq('id', user.id) // Changed from user_id to id
+          .single();
+
+        // If profile doesn't exist or is not completed, redirect to profile setup
+        if (profileError || !profile || !profile.is_profile_completed) {
+          return NextResponse.redirect(new URL('/profile-setup', request.url));
+        }
+      } catch (error) {
+        console.error('Error checking profile in middleware:', error);
       }
-    } catch (error) {
-      console.error('Middleware error:', error);
-      // If we encounter an error, just continue without redirecting
     }
   }
 
+  // Default: allow access to the requested page
   return NextResponse.next();
 }

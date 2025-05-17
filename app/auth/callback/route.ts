@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       const supabase = await createClient();
       await supabase.auth.exchangeCodeForSession(code);
 
-      // Get user after authentication - more secure than getSession
+      // Get user after authentication
       const {
         data: { user },
         error: userError,
@@ -22,12 +22,12 @@ export async function GET(request: NextRequest) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_profile_completed')
-          .eq('id', user.id)
+          .eq('id', user.id) // Changed from user_id to id
           .single();
 
-        // If profile query had an error (likely no profile found)
+        // If profile doesn't exist or had an error fetching, redirect to profile setup
         if (profileError) {
-          // Create a new profile for this user
+          // Try to create a basic profile
           try {
             // Generate a username from the email
             const emailUsername = user.email?.split('@')[0] || 'user';
@@ -37,39 +37,40 @@ export async function GET(request: NextRequest) {
               .toString(36)
               .substring(2, 8)}`;
 
-            // Insert a basic profile
+            // Insert a basic profile - using 'id' instead of 'user_id'
             await supabase.from('profiles').insert({
-              id: user.id,
+              id: user.id, // Changed from user_id to id
               username: safeUsername,
               first_name: '',
               last_name: '',
+              phone_number: '',
+              city: '',
+              country: '',
               is_profile_completed: false,
               user_type: 'content_creator',
             });
-
-            // Redirect to profile setup
-            return NextResponse.redirect(
-              new URL('/profile-setup', request.url)
-            );
           } catch (err) {
             console.error('Error creating profile in callback:', err);
           }
+
+          // Redirect to profile setup
+          return NextResponse.redirect(new URL('/profile-setup', request.url));
         }
 
-        // If profile exists but is not completed
+        // If profile exists but is not completed, redirect to profile setup
         if (profile && !profile.is_profile_completed) {
           return NextResponse.redirect(new URL('/profile-setup', request.url));
         }
 
-        // If profile exists and is completed
+        // If profile exists and is completed, redirect to home
         if (profile && profile.is_profile_completed) {
           return NextResponse.redirect(new URL('/', request.url));
         }
       }
     }
 
-    // Fallback redirect to profile setup
-    return NextResponse.redirect(new URL('/profile-setup', request.url));
+    // Default: redirect to home page
+    return NextResponse.redirect(new URL('/', request.url));
   } catch (error) {
     console.error('Auth callback error:', error);
     // Redirect to auth page with error

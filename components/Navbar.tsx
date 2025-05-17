@@ -5,46 +5,15 @@ import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const supabase = createClient();
-
-  // Fetch user on mount
-  useEffect(() => {
-    async function getUserSession() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    getUserSession();
-
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+  const { user, profile, loading, signOut } = useAuth();
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -74,6 +43,10 @@ const Navbar = () => {
   const getInitials = () => {
     if (!user) return '';
 
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    }
+
     // Try to get name from user_metadata
     const firstName = user.user_metadata?.first_name || '';
     const lastName = user.user_metadata?.last_name || '';
@@ -93,19 +66,17 @@ const Navbar = () => {
   };
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setProfileMenuOpen(false);
-      setMobileMenuOpen(false);
-      router.push('/');
-      router.refresh();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    await signOut();
+    setProfileMenuOpen(false);
+    setMobileMenuOpen(false);
   };
 
   // Get username for display
   const getUsername = () => {
+    if (profile) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+
     if (!user) return '';
 
     return (
@@ -118,6 +89,10 @@ const Navbar = () => {
 
   // Get profile photo URL
   const getProfilePhotoUrl = () => {
+    if (profile?.profile_photo) {
+      return profile.profile_photo;
+    }
+
     if (!user) return null;
 
     return (
@@ -125,6 +100,11 @@ const Navbar = () => {
       user.user_metadata?.avatar_url ||
       null
     );
+  };
+
+  // Handle sign in button click
+  const handleSignIn = () => {
+    router.push('/auth');
   };
 
   return (
@@ -156,62 +136,70 @@ const Navbar = () => {
               </div>
             </Link>
 
-            {!loading && user ? (
-              // User is logged in, show profile avatar
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 focus:outline-none hover:bg-indigo-200 transition-colors"
-                  aria-expanded={profileMenuOpen}
-                  aria-haspopup="true"
-                >
-                  {getProfilePhotoUrl() ? (
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={getProfilePhotoUrl() as string}
-                        alt="Profile"
-                        className="rounded-full object-cover"
-                        fill
-                      />
-                    </div>
-                  ) : (
-                    <span className="font-medium">{getInitials()}</span>
-                  )}
-                </button>
-
-                {/* Desktop Profile Dropdown */}
-                {profileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                    <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200">
-                      <p className="font-medium">{getUsername()}</p>
-                      <p className="text-gray-500 text-xs">{user.email}</p>
-                    </div>
-
-                    <Link href="/profile">
-                      <div
-                        className="block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        Your Profile
+            {!loading ? (
+              user ? (
+                // User is logged in, show profile avatar
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 focus:outline-none hover:bg-indigo-200 transition-colors"
+                    aria-expanded={profileMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    {getProfilePhotoUrl() ? (
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={getProfilePhotoUrl() as string}
+                          alt="Profile"
+                          className="rounded-full object-cover"
+                          fill
+                        />
                       </div>
-                    </Link>
+                    ) : (
+                      <span className="font-medium">{getInitials()}</span>
+                    )}
+                  </button>
 
-                    <div
-                      className="block px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
-                      onClick={handleSignOut}
-                    >
-                      Sign out
+                  {/* Desktop Profile Dropdown */}
+                  {profileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                      <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200">
+                        <p className="font-medium">{getUsername()}</p>
+                        <p className="text-gray-500 text-xs">{user.email}</p>
+                      </div>
+
+                      <Link href="/profile">
+                        <div
+                          className="block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          Your Profile
+                        </div>
+                      </Link>
+
+                      <div
+                        className="block px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
+                        onClick={handleSignOut}
+                      >
+                        Sign out
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // User is not logged in, show sign in button
-              <Link href="/auth">
-                <button className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                  )}
+                </div>
+              ) : (
+                // User is not logged in, show sign in button
+                <button
+                  onClick={handleSignIn}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                >
                   Sign In
                 </button>
-              </Link>
+              )
+            ) : (
+              // Loading state
+              <div className="w-10 h-10 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             )}
           </div>
 
@@ -352,14 +340,15 @@ const Navbar = () => {
           </Link>
 
           {!loading && !user && (
-            <Link href="/auth">
-              <div
-                className="block w-full text-center mt-4 px-4 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </div>
-            </Link>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push('/auth');
+              }}
+              className="block w-full text-center mt-4 px-4 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Sign In
+            </button>
           )}
         </div>
       </div>
