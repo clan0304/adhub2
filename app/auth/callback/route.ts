@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
         // If profile exists and is completed
         if (profile && profile.is_profile_completed) {
-          return NextResponse.redirect(new URL('/dashboard', request.url));
+          return NextResponse.redirect(new URL('/', request.url));
         }
       }
     }
