@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function AuthPage() {
+// This component safely uses useSearchParams inside a Suspense boundary
+function AuthContent() {
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,14 +14,10 @@ export default function AuthPage() {
   const [authChecking, setAuthChecking] = useState(true);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, profile, loading, signIn, signUp, signInWithGoogle } =
     useAuth();
 
-  // Get the redirectTo parameter from the URL
-  const redirectTo = searchParams.get('redirectTo') || '/';
-
-  // Check if user is already logged in and profile status
+  // Handle redirects based on auth state
   useEffect(() => {
     if (!loading) {
       setAuthChecking(false);
@@ -36,10 +33,10 @@ export default function AuthPage() {
           return;
         }
 
-        // If profile is complete, redirect to the intended destination
+        // If profile is complete, redirect to the intended destination (or home)
         if (profile && profile.is_profile_completed) {
-          console.log('Profile complete, redirecting to', redirectTo);
-          router.replace(redirectTo !== '/' ? redirectTo : '/');
+          console.log('Profile complete, redirecting to home');
+          router.replace('/');
           return;
         }
 
@@ -47,7 +44,7 @@ export default function AuthPage() {
         router.replace('/profile-setup');
       }
     }
-  }, [user, profile, loading, router, redirectTo]);
+  }, [user, profile, loading, router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +58,7 @@ export default function AuthPage() {
       if (error) {
         setError(error.message);
       }
-      // Note: No need to redirect here - the useEffect will handle it
+      // Redirects are handled by the useEffect
     } catch (error: any) {
       console.error('Sign in error:', error);
       setError(error.message || 'An error occurred during sign in');
@@ -80,7 +77,7 @@ export default function AuthPage() {
       if (error) {
         setError(error.message);
       }
-      // Note: No need to redirect here - the useEffect will handle it
+      // Redirects are handled by the useEffect
     } catch (error: any) {
       console.error('Sign up error:', error);
       setError(error.message || 'An error occurred during sign up');
@@ -93,8 +90,8 @@ export default function AuthPage() {
     console.log('Attempting to sign in with Google');
 
     try {
-      // Pass the redirectTo param to OAuth
-      await signInWithGoogle(redirectTo);
+      // Pass the redirectTo param to OAuth if needed
+      await signInWithGoogle();
     } catch (error: any) {
       console.error('Google sign in error:', error);
       setError(error.message || 'An error occurred during Google sign in');
@@ -240,5 +237,20 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrapper page component with Suspense boundary
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
+      <AuthContent />
+    </Suspense>
   );
 }
