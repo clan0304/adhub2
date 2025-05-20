@@ -2,8 +2,15 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Check, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 // This component safely uses useSearchParams inside a Suspense boundary
 function AuthContent() {
@@ -12,10 +19,26 @@ function AuthContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, profile, loading, signIn, signUp, signInWithGoogle } =
     useAuth();
+
+  // Check if there's a reset=success param to show password reset success message
+  useEffect(() => {
+    if (searchParams.get('reset') === 'success') {
+      setResetSuccess(true);
+
+      // Clear the query parameter from URL after 5 seconds
+      setTimeout(() => {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        setResetSuccess(false);
+      }, 5000);
+    }
+  }, [searchParams]);
 
   // Handle redirects based on auth state
   useEffect(() => {
@@ -124,18 +147,30 @@ function AuthContent() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <Card className="py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {resetSuccess && (
+            <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
+              <Check className="h-4 w-4" />
+              <AlertDescription>
+                Your password has been successfully reset. You can now sign in
+                with your new password.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-6">
-            <button
+            <Button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+              variant="outline"
+              className="w-full flex justify-center"
             >
               <svg
                 className="h-5 w-5 mr-2"
@@ -163,7 +198,7 @@ function AuthContent() {
                 </g>
               </svg>
               Continue with Google
-            </button>
+            </Button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -176,16 +211,14 @@ function AuthContent() {
               </div>
             </div>
 
-            <form onSubmit={isSignIn ? handleSignIn : handleSignUp}>
+            <form
+              onSubmit={isSignIn ? handleSignIn : handleSignUp}
+              className="space-y-6"
+            >
               <div className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Email address
-                  </label>
-                  <input
+                  <Label htmlFor="email">Email address</Label>
+                  <Input
                     id="email"
                     name="email"
                     type="email"
@@ -193,18 +226,13 @@ function AuthContent() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1"
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Password
-                  </label>
-                  <input
+                  <Label htmlFor="password">Password</Label>
+                  <Input
                     id="password"
                     name="password"
                     type="password"
@@ -214,27 +242,54 @@ function AuthContent() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1"
                   />
                 </div>
 
-                <div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
-                  >
-                    {loading
-                      ? 'Processing...'
-                      : isSignIn
-                      ? 'Sign in'
-                      : 'Sign up'}
-                  </button>
-                </div>
+                {isSignIn && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        id="remember-me"
+                        name="remember-me"
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label
+                        htmlFor="remember-me"
+                        className="ml-2 block text-sm text-gray-900"
+                      >
+                        Remember me
+                      </label>
+                    </div>
+
+                    <div className="text-sm">
+                      <Link
+                        href="/auth/forgot-password"
+                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                      >
+                        Forgot your password?
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isSignIn ? (
+                    'Sign in'
+                  ) : (
+                    'Sign up'
+                  )}
+                </Button>
               </div>
             </form>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import Logo from '@/public/assets/adhub.png';
 
 const Navbar = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -12,11 +13,11 @@ const Navbar = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  // Add refs for the menu items to prevent closing on click
+  const profileNavButtonRef = useRef<HTMLButtonElement>(null);
+  const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const { user, profile, loading, signOut } = useAuth();
-  // Add refs for the menu items to prevent closing on click
-  const profileMenuItemRef = useRef<HTMLButtonElement>(null);
-  const signOutMenuItemRef = useRef<HTMLButtonElement>(null);
 
   // Use separate handlers for click events
   const handleProfileClick = () => {
@@ -86,34 +87,24 @@ const Navbar = () => {
   // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      // Get the target element
       const target = event.target as Node;
 
-      // Fixed: Check if clicking on profile button or any menu items (shouldn't close menu)
+      // Check if the click is on the profile button or menu buttons
       const isClickOnProfileButton = profileButtonRef.current?.contains(target);
-      const isClickOnProfileMenuItem =
-        profileMenuItemRef.current?.contains(target);
-      const isClickOnSignOutMenuItem =
-        signOutMenuItemRef.current?.contains(target);
+      const isClickOnProfileNavButton =
+        profileNavButtonRef.current?.contains(target);
+      const isClickOnSignOutButton = signOutButtonRef.current?.contains(target);
 
-      if (
-        isClickOnProfileButton ||
-        isClickOnProfileMenuItem ||
-        isClickOnSignOutMenuItem
-      ) {
-        return;
-      }
-
-      // Check if clicking inside profile menu (shouldn't close menu)
+      // Check if the click is inside the profile menu
       const isClickInsideProfileMenu = profileMenuRef.current?.contains(target);
 
-      // Only close the menu if clicking outside both the menu and the button
+      // Only close the menu if clicking outside everything related to the menu
       if (
         profileMenuOpen &&
-        !isClickInsideProfileMenu &&
         !isClickOnProfileButton &&
-        !isClickOnProfileMenuItem &&
-        !isClickOnSignOutMenuItem
+        !isClickInsideProfileMenu &&
+        !isClickOnProfileNavButton &&
+        !isClickOnSignOutButton
       ) {
         setProfileMenuOpen(false);
       }
@@ -133,7 +124,6 @@ const Navbar = () => {
       }
     }
 
-    // Use mousedown to catch the click before other handlers
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
@@ -184,24 +174,30 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/">
-              <div className="text-xl font-bold text-indigo-600">Your Logo</div>
+              <Image
+                src={Logo}
+                alt="logo image"
+                width={150}
+                height={50}
+                className="hover:scale-110"
+              />
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             <Link href="/creators">
-              <div className="text-gray-700 hover:text-indigo-600 transition-colors">
+              <div className="text-gray-700 hover:text-indigo-600 font-semibold transition-colors font-roboto_slab">
                 Creators
               </div>
             </Link>
             <Link href="/findwork">
-              <div className="text-gray-700 hover:text-indigo-600 transition-colors">
+              <div className="text-gray-700 hover:text-indigo-600  font-semibold transition-colors font-roboto_slab">
                 Find Work
               </div>
             </Link>
             <Link href="/aboutus">
-              <div className="text-gray-700 hover:text-indigo-600 transition-colors">
+              <div className="text-gray-700 hover:text-indigo-600 font-roboto_slab font-semibold transition-colors">
                 About Us
               </div>
             </Link>
@@ -245,7 +241,7 @@ const Navbar = () => {
                       </div>
 
                       <button
-                        ref={profileMenuItemRef}
+                        ref={profileNavButtonRef}
                         onClick={handleProfileNav}
                         className="w-full text-left block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
                       >
@@ -253,7 +249,7 @@ const Navbar = () => {
                       </button>
 
                       <button
-                        ref={signOutMenuItemRef}
+                        ref={signOutButtonRef}
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
                       >
@@ -266,7 +262,7 @@ const Navbar = () => {
                 // User is not logged in, show sign in button
                 <button
                   onClick={handleSignIn}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors font-roboto_slab"
                 >
                   Sign In
                 </button>
@@ -321,7 +317,7 @@ const Navbar = () => {
                     </div>
 
                     <button
-                      ref={profileMenuItemRef}
+                      ref={profileNavButtonRef}
                       onClick={handleProfileNav}
                       className="w-full text-left block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
                     >
@@ -329,7 +325,7 @@ const Navbar = () => {
                     </button>
 
                     <button
-                      ref={signOutMenuItemRef}
+                      ref={signOutButtonRef}
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
                     >
@@ -396,7 +392,7 @@ const Navbar = () => {
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg border-t border-gray-100">
           <Link href="/creators">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
               onClick={() => setMobileMenuOpen(false)}
             >
               Creators
@@ -404,7 +400,7 @@ const Navbar = () => {
           </Link>
           <Link href="/findwork">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
               onClick={() => setMobileMenuOpen(false)}
             >
               Find Work
@@ -412,7 +408,7 @@ const Navbar = () => {
           </Link>
           <Link href="/aboutus">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
               onClick={() => setMobileMenuOpen(false)}
             >
               About Us
@@ -425,7 +421,7 @@ const Navbar = () => {
                 setMobileMenuOpen(false);
                 router.push('/auth');
               }}
-              className="block w-full text-center mt-4 px-4 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              className="block w-full text-center mt-4 px-4 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 font-roboto_slab"
             >
               Sign In
             </button>

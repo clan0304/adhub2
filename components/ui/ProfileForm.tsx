@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { UserType, ProfileFormData } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -51,6 +52,7 @@ export default function ProfileForm({
     tiktokUrl: '',
     isPublic: false,
     isCollaborated: false,
+    bio: '', // Add bio field
   });
 
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(
@@ -77,7 +79,7 @@ export default function ProfileForm({
         const { data, error } = await supabase
           .from('profiles')
           .select(
-            'username, first_name, last_name, phone_number, city, country'
+            'username, first_name, last_name, phone_number, city, country, bio'
           )
           .eq('id', userId)
           .single();
@@ -101,6 +103,7 @@ export default function ProfileForm({
             phoneNumber: data.phone_number || '',
             city: data.city || '',
             country: data.country || '',
+            bio: data.bio || '',
           }));
         }
       } catch (error) {
@@ -213,6 +216,16 @@ export default function ProfileForm({
       return false;
     }
 
+    // Validate bio length if provided
+    if (
+      userType === 'content_creator' &&
+      formData.bio &&
+      formData.bio.length > 500
+    ) {
+      setError('Bio must be less than 500 characters');
+      return false;
+    }
+
     // Validate URL formats if provided
     const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/;
 
@@ -301,6 +314,7 @@ export default function ProfileForm({
             userType === 'content_creator'
               ? processUrl(formData.tiktokUrl)
               : null,
+          bio: userType === 'content_creator' ? formData.bio || null : null,
           is_public: userType === 'content_creator' ? formData.isPublic : false,
           is_collaborated:
             userType === 'content_creator' ? formData.isCollaborated : false,
@@ -511,6 +525,26 @@ export default function ProfileForm({
           {userType === 'content_creator' && (
             <>
               <Separator className="my-6" />
+
+              {/* Bio section */}
+              <div className="space-y-2">
+                <Label htmlFor="bio" className="text-sm font-medium">
+                  Bio
+                </Label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  value={formData.bio || ''}
+                  onChange={handleInputChange}
+                  placeholder="Tell visitors about yourself, your content, and what you do..."
+                  className="h-32"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your bio helps potential collaborators understand your style
+                  and content. Maximum 500 characters.{' '}
+                  {formData.bio ? `(${formData.bio.length}/500)` : ''}
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Social Media Links</h3>

@@ -13,4 +13,5 @@ export type ProfileFormData = {
   tiktokUrl?: string;
   isPublic?: boolean;
   isCollaborated?: boolean;
+  bio?: string;
 };

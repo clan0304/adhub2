@@ -18,6 +18,7 @@ interface Creator {
   instagram_url: string | null;
   youtube_url: string | null;
   tiktok_url: string | null;
+  bio: string | null; // Added bio field
   is_collaborated: boolean;
   is_public: boolean;
   user_type: string;
@@ -123,15 +124,15 @@ export default function CreatorProfilePage() {
                     d="M10 19l-7-7m0 0l7-7m-7 7h18"
                   ></path>
                 </svg>
-                Back to creators
+                Back to Creators
               </button>
             </Link>
           </div>
 
           {/* Creator header */}
           <div className="p-8 border-b">
-            <div className="flex flex-col sm:flex-row items-center">
-              <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-100 mb-4 sm:mb-0 sm:mr-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start">
+              <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-100 mb-4 sm:mb-0 sm:mr-6 flex-shrink-0">
                 {creator.profile_photo_url ? (
                   <Image
                     src={creator.profile_photo_url}
@@ -173,6 +174,18 @@ export default function CreatorProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* Creator Bio */}
+          {creator.bio && (
+            <div className="p-8 border-b">
+              <h2 className="text-xl font-semibold mb-4">About Me</h2>
+              <div className="prose max-w-none">
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {creator.bio}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Social links */}
           <div className="p-8 border-b">

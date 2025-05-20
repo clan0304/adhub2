@@ -52,7 +52,7 @@ export function JobPostingsList({
     }
   };
 
-  // Format deadline helper function
+  // Format deadline helper function - Modified to show only hours and minutes
   const formatDeadline = (
     dateString: string | null,
     timeString: string | null
@@ -61,14 +61,24 @@ export function JobPostingsList({
 
     try {
       const date = new Date(dateString);
+      // Format the date part
       let formattedDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       }).format(date);
 
+      // Format the time part (if provided)
       if (timeString) {
-        formattedDate += ` at ${timeString}`;
+        // Parse hours and minutes from the timeString (HH:MM:SS format)
+        const [hours, minutes] = timeString.split(':').map(Number);
+
+        // Create time string in 12-hour format with AM/PM
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12; // Convert 0 to 12 for 12-hour format
+        const displayMinutes = minutes.toString().padStart(2, '0');
+
+        formattedDate += ` at ${displayHours}:${displayMinutes} ${period}`;
       }
 
       return formattedDate;
