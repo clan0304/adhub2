@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// app/creators/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,91 +8,110 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getData } from 'country-list';
-import { Search, X } from 'lucide-react';
+import { Search, X, Plane, MapPin, Settings } from 'lucide-react';
+import { CreatorWithTravel, CountryOption } from '@/types/travel';
 import Youtube from '@/public/assets/youtube.png';
 import Instagram from '@/public/assets/instagram.png';
 import Tiktok from '@/public/assets/tiktok.png';
 
-interface Creator {
-  id: string;
-  username: string;
-  first_name: string;
-  last_name: string;
-  profile_photo_url: string | null;
-  city: string | null;
-  country: string | null;
-  instagram_url: string | null;
-  youtube_url: string | null;
-  tiktok_url: string | null;
-  is_collaborated: boolean;
-  is_public: boolean;
-  user_type: string;
-  bio: string | null;
-}
-
-interface CountryOption {
-  code: string;
-  name: string;
-}
-
 export default function CreatorsPage() {
-  const [allCreators, setAllCreators] = useState<Creator[]>([]);
-  const [filteredCreators, setFilteredCreators] = useState<Creator[]>([]);
+  const { user, profile } = useAuth(); // Added profile to check user type
+  const [allCreators, setAllCreators] = useState<CreatorWithTravel[]>([]);
+  const [filteredCreators, setFilteredCreators] = useState<CreatorWithTravel[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const supabase = createClient();
-  const { user } = useAuth(); // Get user from auth context
+
+  // Check if current user is a content creator
+  const isContentCreator = profile?.user_type === 'content_creator';
 
   // Load country list
   useEffect(() => {
     try {
       const countryData = getData();
-
-      // Modify the list to ensure Taiwan is displayed correctly
       const modifiedCountries = countryData.map((country) => {
         if (country.code === 'TW') {
           return { ...country, name: 'Taiwan' };
         }
         return country;
       });
-
-      // Sort countries alphabetically
       modifiedCountries.sort((a, b) => a.name.localeCompare(b.name));
-
       setCountries(modifiedCountries);
     } catch (error) {
       console.error('Error loading countries:', error);
-      // Fallback if country-list package fails
       setCountries([]);
     }
   }, []);
 
-  // Fetch creators - this works for both authenticated and non-authenticated users
+  // Fetch creators with travel data
   useEffect(() => {
     const fetchCreators = async () => {
       try {
         setLoading(true);
 
-        // This query works for both authenticated and non-authenticated users
-        // because we're only selecting public profiles
-        const { data, error } = await supabase
+        // Get all public content creators
+        const { data: creatorsData, error: creatorsError } = await supabase
           .from('profiles')
           .select('*')
           .eq('is_public', true)
           .eq('user_type', 'content_creator')
           .order('username');
 
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
+        if (creatorsError) throw creatorsError;
+
+        if (!creatorsData || creatorsData.length === 0) {
+          setAllCreators([]);
+          setFilteredCreators([]);
+          setLoading(false);
+          return;
         }
 
-        console.log('Fetched creators:', data?.length || 0);
-        setAllCreators(data || []);
-        setFilteredCreators(data || []);
+        // Get active travel schedules
+        const { data: travelData, error: travelError } = await supabase
+          .from('travel_schedules')
+          .select('*')
+          .gte('end_date', new Date().toISOString().split('T')[0])
+          .lte(
+            'start_date',
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0]
+          );
+
+        if (travelError) {
+          console.error('Error fetching travel data:', travelError);
+        }
+
+        // Merge creator data with travel data
+        const creatorsWithTravel = creatorsData.map((creator) => {
+          const activeTravel = travelData?.find(
+            (travel) =>
+              travel.profile_id === creator.id &&
+              new Date() >=
+                new Date(
+                  new Date(travel.start_date).getTime() -
+                    30 * 24 * 60 * 60 * 1000
+                ) &&
+              new Date() <= new Date(travel.end_date)
+          );
+
+          return {
+            ...creator,
+            is_traveling: !!activeTravel,
+            travel_city: activeTravel?.city || null,
+            travel_country: activeTravel?.country || null,
+            travel_start_date: activeTravel?.start_date || null,
+            travel_end_date: activeTravel?.end_date || null,
+          };
+        });
+
+        setAllCreators(creatorsWithTravel);
+        setFilteredCreators(creatorsWithTravel);
       } catch (err: any) {
         console.error('Error fetching creators:', err);
         setError(err.message || 'Failed to load creators');
@@ -112,7 +132,9 @@ export default function CreatorsPage() {
     // Apply country filter
     if (selectedCountry) {
       filtered = filtered.filter(
-        (creator) => creator.country === selectedCountry
+        (creator) =>
+          creator.country === selectedCountry ||
+          creator.travel_country === selectedCountry
       );
     }
 
@@ -127,8 +149,21 @@ export default function CreatorsPage() {
           `${creator.first_name || ''} ${creator.last_name || ''}`
             .toLowerCase()
             .includes(query) ||
-          (creator.city?.toLowerCase() || '').includes(query)
+          (creator.city?.toLowerCase() || '').includes(query) ||
+          (creator.travel_city?.toLowerCase() || '').includes(query)
       );
+    }
+
+    // Sort creators - prioritize those who are traveling to the selected country
+    if (selectedCountry) {
+      filtered.sort((a, b) => {
+        const aTraveling = a.travel_country === selectedCountry;
+        const bTraveling = b.travel_country === selectedCountry;
+
+        if (aTraveling && !bTraveling) return -1;
+        if (!aTraveling && bTraveling) return 1;
+        return a.username.localeCompare(b.username);
+      });
     }
 
     setFilteredCreators(filtered);
@@ -143,10 +178,10 @@ export default function CreatorsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-700">Loading creators...</p>
-        </div>
+        <div
+          className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"
+          aria-hidden="true"
+        ></div>
       </div>
     );
   }
@@ -180,17 +215,29 @@ export default function CreatorsPage() {
             Discover amazing content creators ready to collaborate
           </p>
 
-          {/* Join as Creator button - only show for non-signed-in users */}
-          {!user && (
-            <div className="mt-6">
+          {/* Action buttons section */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* Join as Creator button - only show for non-signed-in users */}
+            {!user && (
               <Link
                 href="/auth"
                 className="inline-flex items-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors shadow-sm"
               >
                 Join as a Creator
               </Link>
-            </div>
-          )}
+            )}
+
+            {/* Manage Travel button - only show for signed-in content creators */}
+            {user && isContentCreator && (
+              <Link
+                href="/travel"
+                className="inline-flex items-center px-6 py-2 border border-indigo-600 text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors shadow-sm"
+              >
+                <Plane className="h-5 w-5 mr-2" />
+                Manage Travel
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Search and Filter Section */}
@@ -248,6 +295,29 @@ export default function CreatorsPage() {
           </div>
         </div>
 
+        {/* Content Creator Travel Management Notice */}
+        {user && isContentCreator && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <Plane className="h-5 w-5 text-blue-600 mr-2" />
+              <div className="flex-1">
+                <p className="text-sm text-blue-800">
+                  <strong>Planning to travel?</strong> Add your travel schedule
+                  to appear in location-based searches and connect with
+                  businesses in your destination.
+                </p>
+              </div>
+              <Link
+                href="/travel"
+                className="ml-4 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Settings className="h-3.5 w-3.5 mr-1" />
+                Manage
+              </Link>
+            </div>
+          </div>
+        )}
+
         {filteredCreators.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             {allCreators.length === 0 ? (
@@ -301,7 +371,46 @@ export default function CreatorsPage() {
   );
 }
 
-function CreatorCard({ creator }: { creator: Creator }) {
+function CreatorCard({ creator }: { creator: CreatorWithTravel }) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getTravelStatus = () => {
+    if (
+      !creator.is_traveling ||
+      !creator.travel_start_date ||
+      !creator.travel_end_date
+    ) {
+      return null;
+    }
+
+    const today = new Date();
+    const startDate = new Date(creator.travel_start_date);
+    const endDate = new Date(creator.travel_end_date);
+
+    if (today < startDate) {
+      return {
+        label: `Traveling soon to ${creator.travel_city}`,
+        color: 'bg-blue-100 text-blue-800',
+        icon: <Plane className="h-3 w-3" />,
+      };
+    } else if (today >= startDate && today <= endDate) {
+      return {
+        label: `Currently in ${creator.travel_city}`,
+        color: 'bg-green-100 text-green-800',
+        icon: <MapPin className="h-3 w-3" />,
+      };
+    }
+
+    return null;
+  };
+
+  const travelStatus = getTravelStatus();
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <div className="p-6">
@@ -331,14 +440,35 @@ function CreatorCard({ creator }: { creator: Creator }) {
           </div>
         </div>
 
+        {/* Location */}
         <div className="mb-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 flex items-center gap-1">
+            <MapPin className="h-4 w-4" />
             {creator.city && creator.country
               ? `${creator.city}, ${creator.country}`
               : creator.city || creator.country || 'Location not provided'}
           </p>
         </div>
 
+        {/* Travel Status */}
+        {travelStatus && (
+          <div className="mb-4">
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${travelStatus.color}`}
+            >
+              {travelStatus.icon}
+              {travelStatus.label}
+            </span>
+            {creator.travel_start_date && creator.travel_end_date && (
+              <p className="text-xs text-gray-500 mt-1">
+                {formatDate(creator.travel_start_date)} -{' '}
+                {formatDate(creator.travel_end_date)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Social Media */}
         <div className="flex space-x-2 mb-4">
           {creator.instagram_url && (
             <a
@@ -392,12 +522,14 @@ function CreatorCard({ creator }: { creator: Creator }) {
           )}
         </div>
 
+        {/* Collaboration Status */}
         {creator.is_collaborated && (
-          <div className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full inline-block mb-4">
+          <div className="bg-green-800 text-green-100 text-sm px-3 py-1 rounded-full inline-block mb-4">
             Open to collaborate
           </div>
         )}
 
+        {/* View Profile Button */}
         <div className="mt-4">
           <Link
             href={`/creators/${creator.username}`}
