@@ -314,7 +314,7 @@ export function JobPostingsList({
 
   return (
     <div className="space-y-6" role="feed" aria-label="Job postings">
-      {activeJobPostings.map((job) => (
+      {activeJobPostings.map((job: any) => (
         <article
           key={job.id}
           className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-all ${
@@ -354,7 +354,7 @@ export function JobPostingsList({
                 {session && !isBusinessOwner && !isDeadlinePassed(job) && (
                   <button
                     onClick={() => handleSaveJob(job.id, job.is_saved)}
-                    className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                    className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none transition-colors"
                     aria-label={
                       job.is_saved
                         ? `Unsave job: ${job.title}`
@@ -363,12 +363,12 @@ export function JobPostingsList({
                   >
                     {job.is_saved ? (
                       <BookmarkCheck
-                        className="h-5 w-5 text-primary"
+                        className="h-5 w-5 text-indigo-600"
                         aria-hidden="true"
                       />
                     ) : (
                       <BookmarkIcon
-                        className="h-5 w-5 text-gray-500"
+                        className="h-5 w-5 text-indigo-600"
                         aria-hidden="true"
                       />
                     )}
@@ -425,10 +425,7 @@ export function JobPostingsList({
                   {job.owner_username || 'user'}
                 </div>
                 <div className="flex items-center text-sm text-gray-600 mt-0.5">
-                  <MapPin
-                    className="h-3.5 w-3.5 mr-1 text-gray-400"
-                    aria-hidden="true"
-                  />
+                  <MapPin className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
                   <span>
                     {job.owner_city && job.owner_country
                       ? `${job.owner_city}, ${job.owner_country}`
@@ -464,17 +461,13 @@ export function JobPostingsList({
 
                   {/* Deadline */}
                   {job.has_deadline && (
-                    <div
-                      className={`flex items-center text-sm ${
-                        isDeadlinePassed(job) ? 'text-red-700' : 'text-primary'
-                      }`}
-                    >
+                    <div className="flex items-center text-sm text-red-700">
                       <Clock
-                        className="h-4 w-4 mr-1.5 text-gray-400"
+                        className="h-4 w-4 mr-1.5 text-red-700"
                         aria-hidden="true"
                       />
                       <span className="font-medium">
-                        Deadline:{' '}
+                        Date and Time:{' '}
                         {formatDeadline(job.deadline_date, job.deadline_time)}
                         {isDeadlinePassed(job) && (
                           <span className="ml-1 text-red-700 font-bold">
@@ -492,7 +485,7 @@ export function JobPostingsList({
                     className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                       isDeadlinePassed(job)
                         ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                        : 'bg-indigo-600 text-white hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-primary'
+                        : 'bg-indigo-600 text-white hover:bg-opacity-70 focus:outline-none'
                     }`}
                     disabled={isDeadlinePassed(job)}
                     aria-label={`View details for ${job.title}${

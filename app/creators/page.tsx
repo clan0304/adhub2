@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getData } from 'country-list';
-import { Search, X } from 'lucide-react';
+import { MapPin, Search, X } from 'lucide-react';
 import Youtube from '@/public/assets/youtube.png';
 import Instagram from '@/public/assets/instagram.png';
 import Tiktok from '@/public/assets/tiktok.png';
@@ -316,7 +316,8 @@ function CreatorCard({ creator }: { creator: Creator }) {
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex gap-2 items-center">
+          <MapPin width={15} height={15} />
           <p className="text-gray-600">
             {creator.city && creator.country
               ? `${creator.city}, ${creator.country}`
@@ -378,7 +379,7 @@ function CreatorCard({ creator }: { creator: Creator }) {
         </div>
 
         {creator.is_collaborated && (
-          <div className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full inline-block mb-4">
+          <div className="bg-green-800 text-green-100 text-md px-3 py-1 rounded-full inline-block mb-4">
             Open to collaborate
           </div>
         )}

@@ -445,13 +445,7 @@ export default function JobPostingDetailPage() {
         <div className="p-6">
           <div className="space-y-6">
             {jobPosting.has_deadline && (
-              <div
-                className={`${
-                  isDeadlinePassed() ? 'text-red-600' : 'text-indigo-600'
-                } p-4 rounded-lg ${
-                  isDeadlinePassed() ? 'bg-red-50' : 'bg-indigo-50'
-                }`}
-              >
+              <div className="p-4 rounded-lg bg-gray-100 text-red-700">
                 <div className="flex items-center">
                   <svg
                     className="h-5 w-5 mr-2"
@@ -466,7 +460,7 @@ export default function JobPostingDetailPage() {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  <span className="font-medium">Deadline:</span>
+                  <span className="font-medium">Date and Time:</span>
                   <span className="ml-2">
                     {formatDeadline(
                       jobPosting.deadline_date,
