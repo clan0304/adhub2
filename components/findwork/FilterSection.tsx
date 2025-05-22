@@ -81,10 +81,10 @@ export function FilterSection({
           {isContentCreator && (
             <button
               onClick={toggleSavedFilter}
-              className={`px-3 py-1 text-sm rounded-full ${
+              className={`px-5 py-1 text-md font-semibold font-mono rounded-full ${
                 showOnlySaved
-                  ? 'bg-indigo-100 text-indigo-800'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-indigo-800 text-indigo-100'
+                  : 'bg-gray-200 text-gray-800'
               }`}
             >
               Saved

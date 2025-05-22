@@ -70,9 +70,9 @@ export default function AboutUs() {
             <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
               {/* For Content Creators */}
               <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="mb-6 rounded-full bg-indigo-100 p-3 w-12 h-12 flex items-center justify-center">
+                <div className="mb-6 rounded-full bg-indigo-800 p-3 w-12 h-12 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-indigo-600"
+                    className="h-6 w-6 text-indigo-100"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -91,7 +91,7 @@ export default function AboutUs() {
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -107,7 +107,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -123,7 +123,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -139,7 +139,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -158,9 +158,9 @@ export default function AboutUs() {
 
               {/* For Business Owners */}
               <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="mb-6 rounded-full bg-indigo-100 p-3 w-12 h-12 flex items-center justify-center">
+                <div className="mb-6 rounded-full bg-indigo-800 p-3 w-12 h-12 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-indigo-600"
+                    className="h-6 w-6 text-indigo-100"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -179,7 +179,7 @@ export default function AboutUs() {
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -195,7 +195,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -211,7 +211,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -227,7 +227,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -246,9 +246,9 @@ export default function AboutUs() {
 
               {/* In-Person Focus */}
               <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="mb-6 rounded-full bg-indigo-100 p-3 w-12 h-12 flex items-center justify-center">
+                <div className="mb-6 rounded-full bg-indigo-800 p-3 w-12 h-12 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-indigo-600"
+                    className="h-6 w-6 text-indigo-100"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -271,7 +271,7 @@ export default function AboutUs() {
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -287,7 +287,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -303,7 +303,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -319,7 +319,7 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start">
                     <svg
-                      className="h-5 w-5 text-indigo-500 mr-2 mt-0.5 flex-shrink-0"
+                      className="h-5 w-5 text-indigo-800 mr-2 mt-0.5 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -354,9 +354,9 @@ export default function AboutUs() {
 
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-100">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-800">
               <svg
-                className="h-6 w-6 text-indigo-600"
+                className="h-6 w-6 text-indigo-100"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -379,9 +379,9 @@ export default function AboutUs() {
           </div>
 
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-100">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-800">
               <svg
-                className="h-6 w-6 text-indigo-600"
+                className="h-6 w-6 text-indigo-100"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -404,9 +404,9 @@ export default function AboutUs() {
           </div>
 
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-100">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-800">
               <svg
-                className="h-6 w-6 text-indigo-600"
+                className="h-6 w-6 text-indigo-100"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

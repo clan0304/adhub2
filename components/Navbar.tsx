@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/public/assets/adhub.png';
@@ -14,7 +14,29 @@ const Navbar = () => {
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname(); // Get current pathname
   const { user, profile, loading, signOut } = useAuth();
+
+  // Check if a link is active
+  const isActiveLink = (href: string) => {
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  // Get link classes based on active state
+  const getLinkClasses = (href: string, isMobile = false) => {
+    const isActive = isActiveLink(href);
+    const baseClasses = isMobile
+      ? 'block px-3 py-2 rounded-md text-base font-medium font-roboto_slab transition-colors'
+      : 'font-semibold transition-colors font-roboto_slab';
+
+    if (isActive) {
+      return `${baseClasses} text-indigo-600 ${isMobile ? 'bg-indigo-50' : ''}`;
+    } else {
+      return `${baseClasses} text-gray-700 hover:text-indigo-600 ${
+        isMobile ? 'hover:bg-gray-50' : ''
+      }`;
+    }
+  };
 
   // Use separate handlers for click events
   const handleProfileClick = () => {
@@ -175,19 +197,13 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             <Link href="/creators">
-              <div className="text-gray-700 hover:text-indigo-600 font-semibold transition-colors font-roboto_slab">
-                Creators
-              </div>
+              <div className={getLinkClasses('/creators')}>Creators</div>
             </Link>
             <Link href="/findwork">
-              <div className="text-gray-700 hover:text-indigo-600 font-semibold transition-colors font-roboto_slab">
-                Find Work
-              </div>
+              <div className={getLinkClasses('/findwork')}>Find Work</div>
             </Link>
             <Link href="/aboutus">
-              <div className="text-gray-700 hover:text-indigo-600 font-roboto_slab font-semibold transition-colors">
-                About Us
-              </div>
+              <div className={getLinkClasses('/aboutus')}>About Us</div>
             </Link>
 
             {!loading ? (
@@ -375,7 +391,7 @@ const Navbar = () => {
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg border-t border-gray-100">
           <Link href="/creators">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
+              className={getLinkClasses('/creators', true)}
               onClick={() => setMobileMenuOpen(false)}
             >
               Creators
@@ -383,7 +399,7 @@ const Navbar = () => {
           </Link>
           <Link href="/findwork">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
+              className={getLinkClasses('/findwork', true)}
               onClick={() => setMobileMenuOpen(false)}
             >
               Find Work
@@ -391,7 +407,7 @@ const Navbar = () => {
           </Link>
           <Link href="/aboutus">
             <div
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 font-roboto_slab"
+              className={getLinkClasses('/aboutus', true)}
               onClick={() => setMobileMenuOpen(false)}
             >
               About Us
