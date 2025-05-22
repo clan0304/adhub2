@@ -16,6 +16,7 @@ export default {
         roboto_slab: ['var(--font-roboto_slap)', 'sans-serif'],
       },
       colors: {
+        main: 'hsl(var(--main))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

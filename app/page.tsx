@@ -14,16 +14,16 @@ export default function Home() {
             potential partners. Our platform connects businesses and content
             creators for amazing collaborations.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
+          <div className="mt-10 flex items-center justify-center gap-x-12">
             <Link
               href="/creators"
-              className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 hover:scale-110"
             >
               Discover Creators
             </Link>
             <Link
               href="/findwork"
-              className="text-sm font-semibold leading-6 text-gray-900 hover:opacity-70"
+              className="text-sm font-semibold leading-6 text-gray-900 hover:opacity-70 hover:scale-110"
             >
               Find Work <span aria-hidden="true">→</span>
             </Link>
