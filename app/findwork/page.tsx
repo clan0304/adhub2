@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import JobPostingModal, {
   JobPostingFormData,
 } from '@/components/JobPostingModal';
@@ -484,6 +485,17 @@ export default function FindWorkPage() {
             </p>
           </div>
 
+          {/* Show "Join as a Business Owner" button for non-signed-in users */}
+          {!user && (
+            <Link
+              href="/auth"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Join as a Business Owner
+            </Link>
+          )}
+
+          {/* Show "Create Job Posting" button for signed-in business owners */}
           {isBusinessOwner && (
             <button
               onClick={() => {

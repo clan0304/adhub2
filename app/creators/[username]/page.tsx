@@ -133,7 +133,7 @@ export default function CreatorProfilePage() {
           </div>
 
           {/* Creator header */}
-          <div className="p-8 border-b">
+          <div className="p-6 border-b">
             <div className="flex flex-col sm:flex-row items-center sm:items-start">
               <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-100 mb-4 sm:mb-0 sm:mr-6 flex-shrink-0">
                 {creator.profile_photo_url ? (
@@ -170,7 +170,7 @@ export default function CreatorProfilePage() {
                 ) : null}
 
                 {creator.is_collaborated && (
-                  <div className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full inline-block">
+                  <div className="bg-green-800 text-green-100 text-md px-3 py-1 rounded-full inline-block mb-4">
                     Open to collaborate
                   </div>
                 )}

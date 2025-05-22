@@ -1,10 +1,13 @@
-// app/about/page.tsx
+'use client';
 
 import Link from 'next/link';
 import AboutPhoto from '@/public/assets/aboutphoto.png';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AboutUs() {
+  const { user } = useAuth();
+
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -438,18 +441,20 @@ export default function AboutUs() {
               Ready to get started?
             </h2>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-indigo-200">
-              Join our community of creators and businesses making real
+              Join our community of creators and business owners making real
               connections and creating authentic content.
             </p>
           </div>
-          <div className="mt-10 lg:mt-0 lg:ml-8 lg:flex-shrink-0">
-            <Link
-              href="/auth?tab=signup"
-              className="inline-flex rounded-md bg-white px-6 py-3 text-base font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              Sign up today
-            </Link>
-          </div>
+          {!user && (
+            <div className="mt-10 lg:mt-0 lg:ml-8 lg:flex-shrink-0">
+              <Link
+                href="/auth"
+                className="inline-flex rounded-md bg-white px-6 py-3 text-base font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                Sign up today
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

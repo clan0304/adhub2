@@ -3,10 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getData } from 'country-list';
-import { MapPin, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import Youtube from '@/public/assets/youtube.png';
 import Instagram from '@/public/assets/instagram.png';
 import Tiktok from '@/public/assets/tiktok.png';
@@ -25,6 +26,7 @@ interface Creator {
   is_collaborated: boolean;
   is_public: boolean;
   user_type: string;
+  bio: string | null;
 }
 
 interface CountryOption {
@@ -41,6 +43,7 @@ export default function CreatorsPage() {
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const supabase = createClient();
+  const { user } = useAuth(); // Get user from auth context
 
   // Load country list
   useEffect(() => {
@@ -176,6 +179,18 @@ export default function CreatorsPage() {
           <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
             Discover amazing content creators ready to collaborate
           </p>
+
+          {/* Join as Creator button - only show for non-signed-in users */}
+          {!user && (
+            <div className="mt-6">
+              <Link
+                href="/auth"
+                className="inline-flex items-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors shadow-sm"
+              >
+                Join as a Creator
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Search and Filter Section */}
@@ -316,8 +331,7 @@ function CreatorCard({ creator }: { creator: Creator }) {
           </div>
         </div>
 
-        <div className="mb-4 flex gap-2 items-center">
-          <MapPin width={15} height={15} />
+        <div className="mb-4">
           <p className="text-gray-600">
             {creator.city && creator.country
               ? `${creator.city}, ${creator.country}`
@@ -379,7 +393,7 @@ function CreatorCard({ creator }: { creator: Creator }) {
         </div>
 
         {creator.is_collaborated && (
-          <div className="bg-green-800 text-green-100 text-md px-3 py-1 rounded-full inline-block mb-4">
+          <div className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full inline-block mb-4">
             Open to collaborate
           </div>
         )}
