@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
   const isProfileSetupRoute = pathname === '/profile-setup';
 
   // Define which routes require authentication
-  // Add all protected routes here - routes that require login
+  // NOTE: /creators is NOT included here - it's public
   const protectedRoutes = [
     '/profile',
     '/dashboard',
@@ -28,8 +28,20 @@ export async function middleware(request: NextRequest) {
     '/settings',
   ];
 
+  // Define public routes that anyone can access
+  const publicRoutes = [
+    '/',
+    '/creators',
+    '/aboutus',
+    '/findwork', // Make findwork public too if you want
+  ];
+
   const requiresAuth = protectedRoutes.some((route) =>
     pathname.startsWith(route)
+  );
+
+  const isPublicRoute = publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route)
   );
 
   // Get authenticated state
@@ -52,7 +64,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth', request.url));
     }
 
-    // For all other public routes, allow access
+    // For public routes, allow access
+    if (isPublicRoute) {
+      return NextResponse.next();
+    }
+
+    // For all other routes, allow access (default to public)
     return NextResponse.next();
   }
 
@@ -87,20 +104,22 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // For all routes (protected and partially protected), check if profile is completed
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_profile_completed')
-        .eq('id', user.id)
-        .single();
+    // For protected routes, check if profile is completed
+    if (requiresAuth) {
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_profile_completed')
+          .eq('id', user.id)
+          .single();
 
-      // If profile doesn't exist or is not completed, redirect to profile setup
-      if (profileError || !profile || !profile.is_profile_completed) {
-        return NextResponse.redirect(new URL('/profile-setup', request.url));
+        // If profile doesn't exist or is not completed, redirect to profile setup
+        if (profileError || !profile || !profile.is_profile_completed) {
+          return NextResponse.redirect(new URL('/profile-setup', request.url));
+        }
+      } catch (error) {
+        console.error('Error checking profile in middleware:', error);
       }
-    } catch (error) {
-      console.error('Error checking profile in middleware:', error);
     }
   }
 

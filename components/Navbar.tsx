@@ -13,9 +13,6 @@ const Navbar = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  // Add refs for the menu items to prevent closing on click
-  const profileNavButtonRef = useRef<HTMLButtonElement>(null);
-  const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const { user, profile, loading, signOut } = useAuth();
 
@@ -28,34 +25,29 @@ const Navbar = () => {
 
   // Handle navigation to profile page
   const handleProfileNav = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default link behavior
-    e.stopPropagation(); // Stop event from bubbling up
+    e.preventDefault();
+    e.stopPropagation();
 
-    // Close the profile menu
+    // Close the profile menu immediately
     setProfileMenuOpen(false);
 
     // Navigate to profile page
-    setTimeout(() => {
-      router.push('/profile');
-    }, 50);
+    router.push('/profile');
   };
 
-  // Update the sign out handler to ensure it works properly
+  // Handle sign out
   const handleSignOut = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent any default behavior
-    e.stopPropagation(); // Stop event from bubbling up
+    e.preventDefault();
+    e.stopPropagation();
 
-    // Close the menu first to prevent issues
+    // Close the menu immediately
     setProfileMenuOpen(false);
 
-    // Then perform the sign out
-    setTimeout(async () => {
-      try {
-        await signOut();
-      } catch (error) {
-        console.error('Sign out error:', error);
-      }
-    }, 50);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   // Get user initials for avatar
@@ -89,22 +81,17 @@ const Navbar = () => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
 
-      // Check if the click is on the profile button or menu buttons
+      // Check if the click is on the profile button
       const isClickOnProfileButton = profileButtonRef.current?.contains(target);
-      const isClickOnProfileNavButton =
-        profileNavButtonRef.current?.contains(target);
-      const isClickOnSignOutButton = signOutButtonRef.current?.contains(target);
 
       // Check if the click is inside the profile menu
       const isClickInsideProfileMenu = profileMenuRef.current?.contains(target);
 
-      // Only close the menu if clicking outside everything related to the menu
+      // Only close the profile menu if clicking outside both the button and the menu
       if (
         profileMenuOpen &&
         !isClickOnProfileButton &&
-        !isClickInsideProfileMenu &&
-        !isClickOnProfileNavButton &&
-        !isClickOnSignOutButton
+        !isClickInsideProfileMenu
       ) {
         setProfileMenuOpen(false);
       }
@@ -124,10 +111,11 @@ const Navbar = () => {
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use 'click' instead of 'mousedown' to allow button handlers to execute first
+    document.addEventListener('click', handleClickOutside);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [profileMenuOpen, mobileMenuOpen]);
 
@@ -192,7 +180,7 @@ const Navbar = () => {
               </div>
             </Link>
             <Link href="/findwork">
-              <div className="text-gray-700 hover:text-indigo-600  font-semibold transition-colors font-roboto_slab">
+              <div className="text-gray-700 hover:text-indigo-600 font-semibold transition-colors font-roboto_slab">
                 Find Work
               </div>
             </Link>
@@ -231,7 +219,7 @@ const Navbar = () => {
                   {profileMenuOpen && (
                     <div
                       ref={profileMenuRef}
-                      className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-20 border border-gray-200"
+                      className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 border border-gray-200"
                     >
                       <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200">
                         <p className="font-medium">{getUsername()}</p>
@@ -241,7 +229,6 @@ const Navbar = () => {
                       </div>
 
                       <button
-                        ref={profileNavButtonRef}
                         onClick={handleProfileNav}
                         className="w-full text-left block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
                       >
@@ -249,7 +236,6 @@ const Navbar = () => {
                       </button>
 
                       <button
-                        ref={signOutButtonRef}
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
                       >
@@ -280,7 +266,6 @@ const Navbar = () => {
             {!loading && user && (
               <div className="relative mr-4">
                 <button
-                  ref={profileButtonRef}
                   onClick={() => {
                     setProfileMenuOpen(!profileMenuOpen);
                     setMobileMenuOpen(false);
@@ -307,7 +292,7 @@ const Navbar = () => {
                 {profileMenuOpen && (
                   <div
                     ref={profileMenuRef}
-                    className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-20 border border-gray-200"
+                    className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 border border-gray-200"
                   >
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-200">
                       <p className="font-medium">{getUsername()}</p>
@@ -317,7 +302,6 @@ const Navbar = () => {
                     </div>
 
                     <button
-                      ref={profileNavButtonRef}
                       onClick={handleProfileNav}
                       className="w-full text-left block px-4 py-2 text-sm text-gray-700 font-semibold hover:bg-gray-100 cursor-pointer"
                     >
@@ -325,7 +309,6 @@ const Navbar = () => {
                     </button>
 
                     <button
-                      ref={signOutButtonRef}
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2 text-sm text-white font-semibold bg-red-600 rounded-b-md hover:opacity-70 cursor-pointer"
                     >

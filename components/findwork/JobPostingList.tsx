@@ -5,6 +5,7 @@ import { JobPosting } from '@/types/findwork';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BookmarkIcon, BookmarkCheck } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface JobPostingsListProps {
   loading: boolean;
@@ -110,6 +111,57 @@ export function JobPostingsList({
     }
   };
 
+  // Filter out expired job postings from display
+  const activeJobPostings = useMemo(() => {
+    const safeFilteredJobPostings = Array.isArray(filteredJobPostings)
+      ? filteredJobPostings
+      : [];
+
+    return safeFilteredJobPostings.filter((job) => {
+      // Always show jobs without deadlines
+      if (!job.has_deadline) return true;
+
+      // For business owners viewing their own postings, show all jobs (including expired)
+      if (
+        isBusinessOwner &&
+        showMyPostingsOnly &&
+        job.profile_id === session?.user?.id
+      ) {
+        return true;
+      }
+
+      // For all other cases, hide expired jobs
+      return !isDeadlinePassed(job);
+    });
+  }, [
+    filteredJobPostings,
+    isBusinessOwner,
+    showMyPostingsOnly,
+    session?.user?.id,
+  ]);
+
+  // Calculate active job count for the all jobs array
+  const activeAllJobPostings = useMemo(() => {
+    const safeAllJobPostings = Array.isArray(allJobPostings)
+      ? allJobPostings
+      : [];
+
+    return safeAllJobPostings.filter((job) => {
+      if (!job.has_deadline) return true;
+
+      // For business owners viewing their own postings, count all jobs
+      if (
+        isBusinessOwner &&
+        showMyPostingsOnly &&
+        job.profile_id === session?.user?.id
+      ) {
+        return true;
+      }
+
+      return !isDeadlinePassed(job);
+    });
+  }, [allJobPostings, isBusinessOwner, showMyPostingsOnly, session?.user?.id]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center my-12">
@@ -132,18 +184,10 @@ export function JobPostingsList({
     );
   }
 
-  // Make sure filteredJobPostings is always an array
-  const safeFilteredJobPostings = Array.isArray(filteredJobPostings)
-    ? filteredJobPostings
-    : [];
-  const safeAllJobPostings = Array.isArray(allJobPostings)
-    ? allJobPostings
-    : [];
-
-  if (safeFilteredJobPostings.length === 0) {
+  if (activeJobPostings.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow">
-        {safeAllJobPostings.length === 0 ? (
+        {activeAllJobPostings.length === 0 ? (
           <>
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -238,20 +282,32 @@ export function JobPostingsList({
 
   return (
     <div className="space-y-6">
-      {safeFilteredJobPostings.map((job) => (
+      {activeJobPostings.map((job) => (
         <div
           key={job.id}
-          className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+          className={`bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow ${
+            isDeadlinePassed(job) ? 'opacity-60' : ''
+          }`}
         >
           <div className="p-6">
             <div className="flex flex-col sm:flex-row justify-between">
               <div className="mb-4 sm:mb-0">
-                <Link
-                  href={`/findwork/${job.slug}`}
-                  className="text-xl font-bold text-indigo-600 hover:underline"
-                >
-                  {job.title || 'Untitled Job Posting'}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/findwork/${job.slug}`}
+                    className="text-xl font-bold text-indigo-600 hover:underline"
+                  >
+                    {job.title || 'Untitled Job Posting'}
+                  </Link>
+                  {/* Show expired badge for business owners viewing their own posts */}
+                  {isBusinessOwner &&
+                    job.profile_id === session?.user?.id &&
+                    isDeadlinePassed(job) && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                        Expired
+                      </span>
+                    )}
+                </div>
 
                 <div className="flex items-center mt-2">
                   <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
@@ -274,7 +330,7 @@ export function JobPostingsList({
                   </div>
                   <div className="ml-2 text-sm text-gray-600">
                     <span className="font-medium">
-                      @{job.owner_username || 'user'}
+                      {job.owner_username || 'user'}
                     </span>{' '}
                     •{' '}
                     {job.owner_city && job.owner_country
@@ -287,8 +343,8 @@ export function JobPostingsList({
               </div>
 
               <div className="flex items-start space-x-2">
-                {/* For content creators: Save button */}
-                {session && !isBusinessOwner && (
+                {/* For content creators: Save button (only for non-expired jobs) */}
+                {session && !isBusinessOwner && !isDeadlinePassed(job) && (
                   <button
                     onClick={() => handleSaveJob(job.id, job.is_saved)}
                     className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors"
@@ -336,20 +392,28 @@ export function JobPostingsList({
               </div>
 
               {job.has_deadline && (
-                <div
-                  className={`${
-                    isDeadlinePassed(job) ? 'text-red-600' : 'text-indigo-600'
-                  } font-medium`}
-                >
-                  Deadline:{' '}
+                <div className="font-medium text-red-600">
+                  Date and Time:{' '}
                   {formatDeadline(job.deadline_date, job.deadline_time)}
+                  {isDeadlinePassed(job) && (
+                    <span className="ml-2 text-red-600 font-bold">
+                      (Expired)
+                    </span>
+                  )}
                 </div>
               )}
             </div>
 
             <div className="mt-4 flex justify-end">
               <Link href={`/findwork/${job.slug}`}>
-                <button className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100 transition-colors">
+                <button
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    isDeadlinePassed(job)
+                      ? 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                      : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                  }`}
+                  disabled={isDeadlinePassed(job)}
+                >
                   View Details
                 </button>
               </Link>

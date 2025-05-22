@@ -66,11 +66,14 @@ export default function CreatorsPage() {
     }
   }, []);
 
+  // Fetch creators - this works for both authenticated and non-authenticated users
   useEffect(() => {
     const fetchCreators = async () => {
       try {
         setLoading(true);
-        // Fetch all public content creators
+
+        // This query works for both authenticated and non-authenticated users
+        // because we're only selecting public profiles
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -79,9 +82,11 @@ export default function CreatorsPage() {
           .order('username');
 
         if (error) {
+          console.error('Supabase error:', error);
           throw error;
         }
 
+        console.log('Fetched creators:', data?.length || 0);
         setAllCreators(data || []);
         setFilteredCreators(data || []);
       } catch (err: any) {

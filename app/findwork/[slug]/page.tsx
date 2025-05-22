@@ -250,14 +250,24 @@ export default function JobPostingDetailPage() {
 
     try {
       const date = new Date(dateString);
+      // Format the date part
       let formattedDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       }).format(date);
 
+      // Format the time part (if provided)
       if (timeString) {
-        formattedDate += ` at ${timeString}`;
+        // Parse hours and minutes from the timeString (HH:MM:SS format)
+        const [hours, minutes] = timeString.split(':').map(Number);
+
+        // Create time string in 12-hour format with AM/PM
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12; // Convert 0 to 12 for 12-hour format
+        const displayMinutes = minutes.toString().padStart(2, '0');
+
+        formattedDate += ` at ${displayHours}:${displayMinutes} ${period}`;
       }
 
       return formattedDate;
@@ -266,7 +276,6 @@ export default function JobPostingDetailPage() {
       return 'No deadline';
     }
   };
-
   // Check if deadline has passed
   const isDeadlinePassed = () => {
     if (!jobPosting?.has_deadline || !jobPosting?.deadline_date) return false;
@@ -487,16 +496,6 @@ export default function JobPostingDetailPage() {
                   </p>
                 )}
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-2">About the Business</h3>
-              <Link
-                href={`/creators/${jobPosting.owner_username}`}
-                className="text-indigo-600 hover:underline"
-              >
-                View {jobPosting.owner_first_name}&apos;s profile
-              </Link>
             </div>
 
             {/* Show applicants list for business owners */}

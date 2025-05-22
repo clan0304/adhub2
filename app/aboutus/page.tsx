@@ -1,6 +1,8 @@
 // app/about/page.tsx
 
 import Link from 'next/link';
+import AboutPhoto from '@/public/assets/aboutphoto.png';
+import Image from 'next/image';
 
 export default function AboutUs() {
   return (
@@ -40,13 +42,14 @@ export default function AboutUs() {
             </p>
           </div>
           <div className="mt-12 lg:mt-0">
-            <div className="aspect-w-3 aspect-h-2 rounded-lg overflow-hidden">
+            <div className="relative w-full aspect-[3/2] rounded-lg overflow-hidden">
               {/* Replace with your own image */}
-              <div className="bg-indigo-100 w-full h-80 flex items-center justify-center">
-                <span className="text-indigo-400 text-lg font-medium">
-                  Mission Image
-                </span>
-              </div>
+              <Image
+                src={AboutPhoto}
+                alt="About Photo"
+                fill
+                objectFit="cover"
+              />
             </div>
           </div>
         </div>
