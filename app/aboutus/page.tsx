@@ -12,6 +12,7 @@ import {
   Smartphone,
   Check,
 } from 'lucide-react';
+import AboutPhoto from '@/public/assets/aboutphoto.png';
 
 export default function AboutUs() {
   const { user } = useAuth();
@@ -67,7 +68,7 @@ export default function AboutUs() {
           <div className="mt-12 lg:mt-0">
             <div className="relative w-full aspect-[3/2] rounded-lg overflow-hidden shadow-lg">
               <Image
-                src="/public/assets/aboutphoto.png"
+                src={AboutPhoto}
                 alt="Team members collaborating on content creation"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -242,7 +243,7 @@ export default function AboutUs() {
       </section>
 
       {/* CTA Section */}
-      <section aria-labelledby="cta-heading" className="bg-teal-700">
+      <section aria-labelledby="cta-heading" className="bg-indigo-600">
         <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8 lg:flex lg:items-center">
           <div className="lg:w-0 lg:flex-1">
             <h2
@@ -251,7 +252,7 @@ export default function AboutUs() {
             >
               Ready to get started?
             </h2>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-teal-100">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-indigo-100">
               Join our community of creators and business owners making real
               connections and creating authentic content.
             </p>
@@ -260,7 +261,7 @@ export default function AboutUs() {
             <div className="mt-10 lg:mt-0 lg:ml-8 lg:flex-shrink-0">
               <Link
                 href="/auth"
-                className="inline-flex rounded-md bg-white px-6 py-3 text-base font-semibold text-teal-700 shadow-sm hover:bg-teal-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors"
+                className="inline-flex rounded-md bg-white px-6 py-3 text-base font-semibold text-indigo-700 shadow-sm hover:bg-teal-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors"
                 aria-label="Sign up for AdHub"
               >
                 Sign up today
