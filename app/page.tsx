@@ -7,12 +7,11 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold text-gray-900 sm:text-6xl tracking-normal">
-            Connect with Amazing Content Creators
+            Showing & Growing — Creators and Businesses Grow Together
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Find the perfect creator for your brand or showcase your talent to
-            potential partners. Our platform connects businesses and content
-            creators for amazing collaborations.
+            Find talented content creators, promote your brand with their work,
+            and grow together.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-12">
             <Link
