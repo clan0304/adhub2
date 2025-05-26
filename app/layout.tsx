@@ -4,6 +4,7 @@ import { Inter, Rubik, Roboto_Slab } from 'next/font/google';
 import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,7 +38,9 @@ export default function RootLayout({
         className={`${inter.className} ${rubik.variable} ${roboto_slab.variable}`}
       >
         <AuthProvider>
+          <Analytics />
           <Navbar />
+
           <main>{children}</main>
         </AuthProvider>
       </body>
