@@ -12,9 +12,16 @@ export default function UserTypeSelection({
 }: UserTypeSelectionProps) {
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
 
-  const handleSelect = (type: UserType) => {
+  // This function ONLY sets the selected type, does NOT call onSelect
+  const handleOptionClick = (type: UserType) => {
     setSelectedType(type);
-    onSelect(type);
+  };
+
+  // This function is called ONLY when Continue button is clicked
+  const handleContinue = () => {
+    if (selectedType) {
+      onSelect(selectedType);
+    }
   };
 
   return (
@@ -25,7 +32,7 @@ export default function UserTypeSelection({
 
       <div className="space-y-4">
         <div
-          onClick={() => handleSelect('content_creator')}
+          onClick={() => handleOptionClick('content_creator')}
           className={`p-6 border rounded-lg cursor-pointer transition ${
             selectedType === 'content_creator'
               ? 'border-indigo-600 bg-indigo-50'
@@ -34,7 +41,7 @@ export default function UserTypeSelection({
         >
           <div className="flex items-center">
             <div
-              className={`w-5 h-5 rounded-full border ${
+              className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                 selectedType === 'content_creator'
                   ? 'border-indigo-600 bg-indigo-600'
                   : 'border-gray-300'
@@ -42,15 +49,15 @@ export default function UserTypeSelection({
             >
               {selectedType === 'content_creator' && (
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-3 h-3 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth="3"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="2"
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
@@ -66,7 +73,7 @@ export default function UserTypeSelection({
         </div>
 
         <div
-          onClick={() => handleSelect('business_owner')}
+          onClick={() => handleOptionClick('business_owner')}
           className={`p-6 border rounded-lg cursor-pointer transition ${
             selectedType === 'business_owner'
               ? 'border-indigo-600 bg-indigo-50'
@@ -75,7 +82,7 @@ export default function UserTypeSelection({
         >
           <div className="flex items-center">
             <div
-              className={`w-5 h-5 rounded-full border ${
+              className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                 selectedType === 'business_owner'
                   ? 'border-indigo-600 bg-indigo-600'
                   : 'border-gray-300'
@@ -83,15 +90,15 @@ export default function UserTypeSelection({
             >
               {selectedType === 'business_owner' && (
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-3 h-3 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth="3"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="2"
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
@@ -109,9 +116,13 @@ export default function UserTypeSelection({
 
       <div className="mt-8 flex justify-end">
         <button
-          onClick={() => selectedType && onSelect(selectedType)}
+          onClick={handleContinue}
           disabled={!selectedType}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            selectedType
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
           Continue
         </button>

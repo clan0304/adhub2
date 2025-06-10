@@ -7,6 +7,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserType, ProfileFormData } from '@/types';
+import { getData } from 'country-list';
+import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +31,11 @@ interface ProfileFormProps {
   userType: UserType;
   userId: string;
   initialUsername?: string;
+}
+
+interface CountryOption {
+  code: string;
+  name: string;
 }
 
 export default function ProfileForm({
@@ -55,6 +62,7 @@ export default function ProfileForm({
     bio: '', // Add bio field
   });
 
+  const [countries, setCountries] = useState<CountryOption[]>([]);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(
     null
   );
@@ -71,6 +79,24 @@ export default function ProfileForm({
 
   const router = useRouter();
   const supabase = createClient();
+
+  // Load country list
+  useEffect(() => {
+    try {
+      const countryData = getData();
+      const modifiedCountries = countryData.map((country) => {
+        if (country.code === 'TW') {
+          return { ...country, name: 'Taiwan' };
+        }
+        return country;
+      });
+      modifiedCountries.sort((a, b) => a.name.localeCompare(b.name));
+      setCountries(modifiedCountries);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+      setCountries([]);
+    }
+  }, []);
 
   // Fetch initial profile data
   useEffect(() => {
@@ -115,7 +141,9 @@ export default function ProfileForm({
   }, [userId, supabase, initialUsername]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -203,10 +231,17 @@ export default function ProfileForm({
     }
 
     // Username format validation
-    if (!/^[a-z0-9_]{3,20}$/.test(formData.username)) {
+    if (!/^[a-zA-Z0-9_]{4,20}$/.test(formData.username)) {
       setError(
-        'Username must be 3-20 characters and can only contain lowercase letters, numbers, and underscores'
+        'Username must be 4-20 characters and can only contain letters, numbers, and underscores'
       );
+      return false;
+    }
+
+    // Check if username has more than 3 letters
+    const letterCount = (formData.username.match(/[a-zA-Z]/g) || []).length;
+    if (letterCount < 3) {
+      setError('Username must contain at least 3 letters');
       return false;
     }
 
@@ -255,6 +290,9 @@ export default function ProfileForm({
     }
 
     setIsLoading(true);
+
+    // Show loading toast
+    const loadingToast = toast.loading('Setting up your profile...');
 
     try {
       let profilePhotoUrl = null;
@@ -325,10 +363,24 @@ export default function ProfileForm({
 
       if (updateError) throw updateError;
 
-      // Redirect to dashboard
-      router.push('/');
-      router.refresh();
+      // Dismiss loading toast and show success toast
+      toast.dismiss(loadingToast);
+      toast.success('Profile setup completed successfully! 🎉', {
+        duration: 3000,
+      });
+
+      // Small delay to let user see the success message
+      setTimeout(() => {
+        router.push('/');
+        router.refresh();
+      }, 1000);
     } catch (error: any) {
+      // Dismiss loading toast and show error toast
+      toast.dismiss(loadingToast);
+      toast.error(
+        error.message || 'Failed to setup profile. Please try again.'
+      );
+
       setError(error.message || 'An unknown error occurred');
     } finally {
       setIsLoading(false);
@@ -428,7 +480,8 @@ export default function ProfileForm({
               id="username-description"
               className="text-xs text-muted-foreground"
             >
-              3-20 characters, lowercase letters, numbers, and underscores only
+              4-20 characters, must contain at least 3 letters, can include
+              numbers and underscores
             </p>
             {usernameAvailable === false && (
               <p
@@ -484,7 +537,6 @@ export default function ProfileForm({
               id="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleInputChange}
-              placeholder="+1 (555) 123-4567"
               aria-describedby="phone-description"
             />
             <p id="phone-description" className="text-xs text-muted-foreground">
@@ -511,13 +563,20 @@ export default function ProfileForm({
               <Label htmlFor="country" className="text-sm font-medium">
                 Country
               </Label>
-              <Input
-                type="text"
+              <select
                 name="country"
                 id="country"
                 value={formData.country}
                 onChange={handleInputChange}
-              />
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+              >
+                <option value="">Select a country</option>
+                {countries.map((country) => (
+                  <option key={country.code} value={country.name}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -622,6 +681,7 @@ export default function ProfileForm({
                     onCheckedChange={(checked) =>
                       handleCheckboxChange('isPublic', checked as boolean)
                     }
+                    className="mt-1.5"
                   />
                   <div className="space-y-1">
                     <Label htmlFor="isPublic" className="font-medium">
@@ -640,6 +700,7 @@ export default function ProfileForm({
                     onCheckedChange={(checked) =>
                       handleCheckboxChange('isCollaborated', checked as boolean)
                     }
+                    className="mt-1.5"
                   />
                   <div className="space-y-1">
                     <Label htmlFor="isCollaborated" className="font-medium">
@@ -665,7 +726,6 @@ export default function ProfileForm({
       </CardContent>
       <CardFooter className="flex justify-end">
         <Button
-          type="submit"
           onClick={handleSubmit}
           disabled={isLoading || checkingUsername}
           className="w-full sm:w-auto"
