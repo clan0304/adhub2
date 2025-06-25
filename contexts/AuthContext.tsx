@@ -44,23 +44,25 @@ interface AuthContextProps {
   profile: Profile | null;
   loading: boolean;
   profileLoading: boolean;
-  signIn: (
-    email: string,
-    password: string
-  ) => Promise<{
-    error: any | null;
-    data: any | null;
-  }>;
-  signUp: (
-    email: string,
-    password: string
-  ) => Promise<{
-    error: any | null;
-    data: any | null;
-  }>;
   signInWithGoogle: (redirectTo?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+
+  // TEMPORARILY DISABLED - Email/Password methods
+  // signIn: (
+  //   email: string,
+  //   password: string
+  // ) => Promise<{
+  //   error: any | null;
+  //   data: any | null;
+  // }>;
+  // signUp: (
+  //   email: string,
+  //   password: string
+  // ) => Promise<{
+  //   error: any | null;
+  //   data: any | null;
+  // }>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -217,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchProfile, initialized, supabase]);
 
-  // Wrap signIn in useCallback
+  /* TEMPORARILY DISABLED - Email/Password sign in
   const signIn = useCallback(
     async (email: string, password: string) => {
       setLoading(true);
@@ -256,8 +258,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     [fetchProfile, router, supabase]
   );
+  END TEMPORARILY DISABLED */
 
-  // Wrap signUp in useCallback
+  /* TEMPORARILY DISABLED - Email/Password sign up
   const signUp = useCallback(
     async (email: string, password: string) => {
       setLoading(true);
@@ -290,6 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     [router, supabase]
   );
+  END TEMPORARILY DISABLED */
 
   // Wrap signInWithGoogle in useCallback
   const signInWithGoogle = useCallback(
@@ -310,6 +314,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           provider: 'google',
           options: {
             redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
           },
         });
 
@@ -368,11 +376,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         loading,
         profileLoading,
-        signIn,
-        signUp,
         signInWithGoogle,
         signOut,
         refreshProfile,
+        // TEMPORARILY DISABLED - Email/Password methods
+        // signIn,
+        // signUp,
       }}
     >
       {children}

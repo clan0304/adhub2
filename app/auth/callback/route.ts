@@ -6,8 +6,35 @@ export async function GET(request: NextRequest) {
   try {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
+    const type = requestUrl.searchParams.get('type');
     const redirectTo = requestUrl.searchParams.get('redirectTo') || '/';
 
+    // Handle password recovery differently
+    if (type === 'recovery') {
+      console.log('Password recovery callback detected');
+
+      if (code) {
+        const supabase = await createClient();
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          console.error(
+            'Error exchanging code for session in recovery:',
+            error
+          );
+          return NextResponse.redirect(
+            new URL('/auth/reset-password?error=invalid_token', request.url)
+          );
+        }
+      }
+
+      // Redirect to reset password page
+      return NextResponse.redirect(
+        new URL('/auth/reset-password', request.url)
+      );
+    }
+
+    // Handle regular auth (sign-in/sign-up)
     if (code) {
       const supabase = await createClient();
       await supabase.auth.exchangeCodeForSession(code);

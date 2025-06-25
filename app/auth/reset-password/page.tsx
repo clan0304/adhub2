@@ -35,25 +35,80 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [hasResetToken, setHasResetToken] = useState(false);
+  const [hasResetToken, setHasResetToken] = useState<boolean | null>(null); // null = checking, true/false = determined
+  const [isClient, setIsClient] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
 
-  // Check if the URL contains the reset token
+  // First, ensure we're on the client
   useEffect(() => {
-    // We check if we're in a browser environment first
-    if (typeof window !== 'undefined') {
-      // Check for the presence of the access_token in the URL fragment
-      const fragment = window.location.hash;
-      if (fragment.includes('access_token=')) {
-        setHasResetToken(true);
-      } else {
-        // No reset token found - user may have navigated here directly
-        console.log('No reset token found in URL');
-      }
-    }
+    setIsClient(true);
   }, []);
+
+  // Check if the URL contains the reset token (only after client-side hydration)
+  useEffect(() => {
+    if (!isClient) return;
+
+    const checkResetToken = async () => {
+      try {
+        // First, check URL parameters for reset token
+        const fragment = window.location.hash;
+        const searchParams = new URLSearchParams(window.location.search);
+
+        // Log what we're receiving for debugging
+        console.log('URL fragment:', fragment);
+        console.log('Search params:', window.location.search);
+        console.log('Full URL:', window.location.href);
+
+        // Check for reset token in query parameters (most common for email links)
+        const tokenFromQuery = searchParams.get('token');
+        const typeFromQuery = searchParams.get('type');
+
+        // Check for tokens in URL fragment (alternative format)
+        const hasTokenInFragment =
+          fragment.includes('access_token=') ||
+          fragment.includes('token=') ||
+          fragment.includes('type=recovery');
+
+        // Check if this is a password reset request
+        const isPasswordReset =
+          (tokenFromQuery && typeFromQuery === 'recovery') ||
+          hasTokenInFragment ||
+          fragment.includes('type=recovery');
+
+        if (isPasswordReset || tokenFromQuery) {
+          console.log('Password reset token found');
+
+          // If we have URL fragments, we need to exchange them for a session
+          if (
+            fragment.includes('access_token=') ||
+            fragment.includes('refresh_token=')
+          ) {
+            console.log('Processing URL fragments for session');
+            // Let Supabase handle the URL fragments automatically
+            const { data, error } = await supabase.auth.getSession();
+            if (error) {
+              console.error('Error getting session from fragments:', error);
+              setHasResetToken(false);
+              return;
+            }
+            console.log('Session from fragments:', data.session);
+          }
+
+          setHasResetToken(true);
+        } else {
+          console.log('No reset token found');
+          setHasResetToken(false);
+        }
+      } catch (error) {
+        console.error('Error checking reset token:', error);
+        setHasResetToken(false);
+      }
+    };
+
+    checkResetToken();
+  }, [isClient, supabase]);
 
   const validatePassword = (password: string): boolean => {
     // Password should be at least 8 characters
@@ -107,7 +162,26 @@ export default function ResetPasswordPage() {
     }
   };
 
-  if (!hasResetToken && typeof window !== 'undefined') {
+  // Show loading state while checking for reset token
+  if (!isClient || hasResetToken === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            </div>
+            <p className="text-center mt-4 text-gray-600">
+              Checking reset link...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show invalid link message if no reset token
+  if (hasResetToken === false) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -135,6 +209,7 @@ export default function ResetPasswordPage() {
     );
   }
 
+  // Show the reset password form if we have a valid token
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">

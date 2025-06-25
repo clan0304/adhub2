@@ -5,26 +5,26 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 
 // This component safely uses useSearchParams inside a Suspense boundary
 function AuthContent() {
-  const [isSignIn, setIsSignIn] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // TEMPORARILY DISABLED - Email/Password states
+  // const [isSignIn, setIsSignIn] = useState(true);
+  // const [email, setEmail] = useState('');
+  // const [password, setPassword] = useState('');
+
   const [error, setError] = useState<string | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [resetSuccess, setResetSuccess] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, profile, loading, signIn, signUp, signInWithGoogle } =
-    useAuth();
+  const { user, profile, loading, signInWithGoogle } = useAuth();
+  // TEMPORARILY DISABLED - Email/Password methods
+  // const { user, profile, loading, signIn, signUp, signInWithGoogle } = useAuth();
 
   // Check if there's a reset=success param to show password reset success message
   useEffect(() => {
@@ -69,6 +69,7 @@ function AuthContent() {
     }
   }, [user, profile, loading, router]);
 
+  /* TEMPORARILY DISABLED - Email/Password handlers
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -106,6 +107,7 @@ function AuthContent() {
       setError(error.message || 'An error occurred during sign up');
     }
   };
+  END TEMPORARILY DISABLED */
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -132,9 +134,13 @@ function AuthContent() {
   return (
     <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isSignIn ? 'Sign in to your account' : 'Create a new account'}
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          Welcome to AdHub
         </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Sign in or create an account to get started
+        </p>
+        {/* TEMPORARILY DISABLED - Sign in/Sign up toggle
         <p className="mt-2 text-center text-sm text-gray-600">
           {isSignIn ? "Don't have an account? " : 'Already have an account? '}
           <button
@@ -144,6 +150,7 @@ function AuthContent() {
             {isSignIn ? 'Sign up' : 'Sign in'}
           </button>
         </p>
+        END TEMPORARILY DISABLED */}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -197,9 +204,17 @@ function AuthContent() {
                   ></path>
                 </g>
               </svg>
-              Continue with Google
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Continue with Google'
+              )}
             </Button>
 
+            {/* TEMPORARILY DISABLED - Email/Password Authentication
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
@@ -288,6 +303,7 @@ function AuthContent() {
                 </Button>
               </div>
             </form>
+            END TEMPORARILY DISABLED */}
           </div>
         </Card>
       </div>

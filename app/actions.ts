@@ -311,6 +311,7 @@ export async function updateProfilePhoto(
   }
 }
 
+/* TEMPORARILY DISABLED - Password reset functions
 export async function forgotPassword(formData: FormData) {
   const email = formData.get('email') as string;
 
@@ -357,3 +358,4 @@ export async function resetPassword(formData: FormData) {
     return { error: error.message || 'An error occurred. Please try again.' };
   }
 }
+END TEMPORARILY DISABLED */
