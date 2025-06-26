@@ -1,4 +1,4 @@
-// File: /app/auth/callback/route.ts
+// app/auth/callback/route.ts
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -6,109 +6,143 @@ export async function GET(request: NextRequest) {
   try {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
-    const type = requestUrl.searchParams.get('type');
-    const redirectTo = requestUrl.searchParams.get('redirectTo') || '/';
+    const state = requestUrl.searchParams.get('state');
+    const error = requestUrl.searchParams.get('error');
 
-    // Handle password recovery differently
-    if (type === 'recovery') {
-      console.log('Password recovery callback detected');
-
-      if (code) {
-        const supabase = await createClient();
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          console.error(
-            'Error exchanging code for session in recovery:',
-            error
-          );
-          return NextResponse.redirect(
-            new URL('/auth/reset-password?error=invalid_token', request.url)
-          );
-        }
-      }
-
-      // Redirect to reset password page
+    if (error) {
+      console.error('OAuth error:', error);
       return NextResponse.redirect(
-        new URL('/auth/reset-password', request.url)
+        new URL(`/auth?error=${encodeURIComponent(error)}`, request.url)
       );
     }
 
-    // Handle regular auth (sign-in/sign-up)
-    if (code) {
-      const supabase = await createClient();
-      await supabase.auth.exchangeCodeForSession(code);
-
-      // Get user after authentication
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (user && !userError) {
-        // Check if a profile exists for this user
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_profile_completed')
-          .eq('id', user.id)
-          .single();
-
-        // If profile doesn't exist or had an error fetching, redirect to profile setup
-        if (profileError) {
-          // Try to create a basic profile
-          try {
-            // Generate a username from the email
-            const emailUsername = user.email?.split('@')[0] || 'user';
-            const safeUsername = `${emailUsername
-              .toLowerCase()
-              .replace(/[^a-z0-9_]/g, '_')}_${Math.random()
-              .toString(36)
-              .substring(2, 8)}`;
-
-            // Insert a basic profile
-            await supabase.from('profiles').insert({
-              id: user.id,
-              username: safeUsername,
-              first_name: '',
-              last_name: '',
-              phone_number: '',
-              city: '',
-              country: '',
-              is_profile_completed: false,
-              user_type: 'content_creator',
-            });
-          } catch (err) {
-            console.error('Error creating profile in callback:', err);
-          }
-
-          // Redirect to profile setup
-          return NextResponse.redirect(new URL('/profile-setup', request.url));
-        }
-
-        // If profile exists but is not completed, redirect to profile setup
-        if (profile && !profile.is_profile_completed) {
-          return NextResponse.redirect(new URL('/profile-setup', request.url));
-        }
-
-        // If profile exists and is completed, redirect to the requested page or home
-        if (profile && profile.is_profile_completed) {
-          const redirectURL =
-            redirectTo !== '/' ? decodeURIComponent(redirectTo) : '/';
-          return NextResponse.redirect(new URL(redirectURL, request.url));
-        }
-      }
+    if (!code) {
+      return NextResponse.redirect(
+        new URL('/auth?error=missing_code', request.url)
+      );
     }
 
-    // Default: redirect to home page
-    return NextResponse.redirect(new URL('/', request.url));
+    // Exchange Google code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: `${requestUrl.origin}/auth/callback`,
+      }),
+    });
+
+    const tokens = await tokenResponse.json();
+
+    if (!tokens.access_token) {
+      throw new Error('Failed to get access token from Google');
+    }
+
+    // Get user info from Google
+    const userResponse = await fetch(
+      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokens.access_token}`
+    );
+    const googleUser = await userResponse.json();
+
+    if (!googleUser.email) {
+      throw new Error('Failed to get user email from Google');
+    }
+
+    // Now use Supabase to create/sign in the user
+    const supabase = await createClient();
+
+    // Try to sign in with email (this will work if user exists)
+    const { data: signInData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email: googleUser.email,
+        password: `google_oauth_${googleUser.id}`, // Use a consistent password for Google users
+      });
+
+    let user = signInData?.user;
+
+    // If sign in failed, create the user
+    if (signInError || !user) {
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email: googleUser.email,
+          password: `google_oauth_${googleUser.id}`,
+          options: {
+            data: {
+              name: googleUser.name,
+              picture: googleUser.picture,
+              provider: 'google',
+              google_id: googleUser.id,
+            },
+          },
+        });
+
+      if (signUpError) {
+        console.error('Error creating user:', signUpError);
+        return NextResponse.redirect(
+          new URL(
+            `/auth?error=${encodeURIComponent(signUpError.message)}`,
+            request.url
+          )
+        );
+      }
+
+      user = signUpData.user;
+    }
+
+    if (!user) {
+      throw new Error('Failed to create or authenticate user');
+    }
+
+    // Check/create profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_profile_completed')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      // Create profile with minimal data - user will complete it in profile setup
+      try {
+        const emailUsername = user.email?.split('@')[0] || 'user';
+        const safeUsername = `${emailUsername
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_')}_${Math.random()
+          .toString(36)
+          .substring(2, 8)}`;
+
+        await supabase.from('profiles').insert({
+          id: user.id,
+          username: safeUsername,
+          first_name: '',
+          last_name: '',
+          phone_number: '',
+          city: '',
+          country: '',
+          is_profile_completed: false,
+          user_type: 'content_creator',
+        });
+      } catch (err) {
+        console.error('Error creating profile in callback:', err);
+      }
+
+      // Always redirect to profile setup for new users
+      return NextResponse.redirect(new URL('/profile-setup', request.url));
+    }
+
+    // For existing users, redirect based on profile completion and state
+    const redirectTo = state ? decodeURIComponent(state) : '/';
+    const finalRedirect = profile?.is_profile_completed
+      ? redirectTo
+      : '/profile-setup';
+
+    return NextResponse.redirect(new URL(finalRedirect, request.url));
   } catch (error) {
-    console.error('Auth callback error:', error);
-    // Redirect to auth page with error
+    console.error('OAuth callback error:', error);
     return NextResponse.redirect(
-      new URL(
-        `/auth?error=${encodeURIComponent('Authentication error occurred')}`,
-        request.url
-      )
+      new URL('/auth?error=oauth_callback_failed', request.url)
     );
   }
 }

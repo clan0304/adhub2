@@ -296,42 +296,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   END TEMPORARILY DISABLED */
 
   // Wrap signInWithGoogle in useCallback
-  const signInWithGoogle = useCallback(
-    async (redirectTo: string = '') => {
-      console.log('Signing in with Google...');
+  const signInWithGoogle = useCallback(async (redirectTo: string = '') => {
+    console.log('Initiating Google sign-in via OAuth proxy...');
 
-      try {
-        // Build the redirectTo URL with the destination encoded if provided
-        const redirectUrl = redirectTo
-          ? `${
-              window.location.origin
-            }/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`
-          : `${window.location.origin}/auth/callback`;
+    try {
+      // Build the proxy URL with optional redirect
+      const proxyUrl = new URL('/api/auth/oauth', window.location.origin);
+      proxyUrl.searchParams.set('provider', 'google');
 
-        console.log('Using redirect URL:', redirectUrl);
-
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            },
-          },
-        });
-
-        if (error) {
-          console.error('Google sign in error:', error);
-          throw error;
-        }
-      } catch (err) {
-        console.error('Exception during Google sign in:', err);
-        throw err;
+      if (redirectTo) {
+        proxyUrl.searchParams.set('redirectTo', redirectTo);
       }
-    },
-    [supabase]
-  );
+
+      console.log('Redirecting to OAuth proxy:', proxyUrl.toString());
+
+      // Redirect to your OAuth proxy (this will ultimately redirect to Google)
+      window.location.href = proxyUrl.toString();
+    } catch (err) {
+      console.error('Exception during Google sign in via proxy:', err);
+      throw err;
+    }
+  }, []);
 
   // Wrap signOut in useCallback
   const signOut = useCallback(async () => {
