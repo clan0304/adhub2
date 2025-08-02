@@ -33,8 +33,20 @@ interface Profile {
   first_name: string;
   last_name: string;
   profile_photo?: string | null;
+  profile_photo_url?: string | null;
   is_profile_completed: boolean;
   user_type: 'content_creator' | 'business_owner';
+  phone_number?: string | null;
+  city?: string | null;
+  country?: string | null;
+  youtube_url?: string | null;
+  instagram_url?: string | null;
+  tiktok_url?: string | null;
+  bio?: string | null;
+  is_public?: boolean;
+  is_collaborated?: boolean;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: any;
 }
 
@@ -47,22 +59,6 @@ interface AuthContextProps {
   signInWithGoogle: (redirectTo?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-
-  // TEMPORARILY DISABLED - Email/Password methods
-  // signIn: (
-  //   email: string,
-  //   password: string
-  // ) => Promise<{
-  //   error: any | null;
-  //   data: any | null;
-  // }>;
-  // signUp: (
-  //   email: string,
-  //   password: string
-  // ) => Promise<{
-  //   error: any | null;
-  //   data: any | null;
-  // }>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -74,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -86,11 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfileLoading(true);
         console.log('Fetching profile for user:', userId);
 
-        // Changed from user_id to id to match your database schema
+        // Fetch profile using the user's ID
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId) // Changed from user_id to id
+          .eq('id', userId)
           .single();
 
         if (error) {
@@ -108,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [supabase]
-  ); // Only depend on supabase client
+  );
 
   // Initialize auth state
   useEffect(() => {
@@ -219,85 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchProfile, initialized, supabase]);
 
-  /* TEMPORARILY DISABLED - Email/Password sign in
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      setLoading(true);
-      console.log('Signing in with email and password...');
-
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          console.error('Sign in error:', error);
-        } else {
-          console.log('Sign in successful');
-
-          // If user has a profile but it's not completed, redirect to profile setup
-          if (data.user) {
-            const userProfile = await fetchProfile(data.user.id);
-
-            if (!userProfile || !userProfile.is_profile_completed) {
-              router.push('/profile-setup');
-            } else {
-              router.push('/');
-            }
-          }
-        }
-
-        return { data, error };
-      } catch (err) {
-        console.error('Exception during sign in:', err);
-        return { data: null, error: err as any };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchProfile, router, supabase]
-  );
-  END TEMPORARILY DISABLED */
-
-  /* TEMPORARILY DISABLED - Email/Password sign up
-  const signUp = useCallback(
-    async (email: string, password: string) => {
-      setLoading(true);
-      console.log('Signing up with email and password...');
-
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) {
-          console.error('Sign up error:', error);
-        } else {
-          console.log('Sign up successful');
-
-          // Always redirect new users to profile setup
-          if (data.user) {
-            router.push('/profile-setup');
-          }
-        }
-
-        return { data, error };
-      } catch (err) {
-        console.error('Exception during sign up:', err);
-        return { data: null, error: err as any };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [router, supabase]
-  );
-  END TEMPORARILY DISABLED */
-
-  // Wrap signInWithGoogle in useCallback
+  // Wrap signInWithGoogle in useCallback - UPDATED for OAuth proxy
   const signInWithGoogle = useCallback(async (redirectTo: string = '') => {
     console.log('Initiating Google sign-in via OAuth proxy...');
+    setLoading(true);
 
     try {
       // Build the proxy URL with optional redirect
@@ -314,6 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = proxyUrl.toString();
     } catch (err) {
       console.error('Exception during Google sign in via proxy:', err);
+      setLoading(false);
       throw err;
     }
   }, []);
@@ -364,9 +287,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithGoogle,
         signOut,
         refreshProfile,
-        // TEMPORARILY DISABLED - Email/Password methods
-        // signIn,
-        // signUp,
       }}
     >
       {children}

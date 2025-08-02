@@ -1,4 +1,3 @@
-// app/api/auth/oauth/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -14,10 +13,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create a custom OAuth URL that goes directly to your domain
-    // This bypasses Supabase's OAuth entirely
-    const googleClientId =
-      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+    // Get Google OAuth credentials
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
     if (!googleClientId) {
       return NextResponse.json(
@@ -26,22 +23,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Create Google OAuth URL - this will show YOUR domain, not Supabase
     const googleOAuthParams = new URLSearchParams({
       client_id: googleClientId,
-      redirect_uri: `${requestUrl.origin}/auth/callback`,
+      redirect_uri: `${requestUrl.origin}/api/auth/callback`, // YOUR domain callback
       response_type: 'code',
       scope: 'openid email profile',
       access_type: 'offline',
       prompt: 'consent',
-      state: encodeURIComponent(redirectTo),
+      state: encodeURIComponent(redirectTo), // Store redirect destination
     });
 
     const googleOAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${googleOAuthParams.toString()}`;
 
-    console.log(
-      'Redirecting directly to Google OAuth (no Supabase URL exposed)'
-    );
-
+    console.log('Redirecting to Google OAuth with YOUR domain callback');
     return NextResponse.redirect(googleOAuthUrl);
   } catch (error) {
     console.error('OAuth proxy error:', error);
