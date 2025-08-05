@@ -1,7 +1,7 @@
-// File: /app/profile-setup/ProfileSetup.tsx
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import UserTypeSelection from '@/components/ui/UserTypeSelection';
 import ProfileForm from '@/components/ui/ProfileForm';
 import { UserType } from '@/types';
@@ -17,10 +17,17 @@ export default function ProfileSetup({
 }: ProfileSetupProps) {
   const [step, setStep] = useState(1);
   const [userType, setUserType] = useState<UserType | null>(null);
+  const router = useRouter();
 
   const handleUserTypeSelected = (type: UserType) => {
     setUserType(type);
     setStep(2);
+  };
+
+  const handleProfileComplete = () => {
+    // Redirect to home page after successful profile completion
+    router.push('/');
+    router.refresh();
   };
 
   return (
@@ -36,6 +43,7 @@ export default function ProfileSetup({
           userType={userType}
           userId={userId}
           initialUsername={initialUsername}
+          onComplete={handleProfileComplete}
         />
       )}
 
@@ -45,12 +53,12 @@ export default function ProfileSetup({
             className={`h-2 w-2 rounded-full ${
               step === 1 ? 'bg-indigo-600' : 'bg-gray-300'
             }`}
-          ></div>
+          />
           <div
             className={`h-2 w-2 rounded-full ${
               step === 2 ? 'bg-indigo-600' : 'bg-gray-300'
             }`}
-          ></div>
+          />
         </div>
       </div>
     </div>

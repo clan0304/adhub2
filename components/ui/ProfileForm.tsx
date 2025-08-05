@@ -2,9 +2,7 @@
 'use client';
 
 import type React from 'react';
-
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { UserType, ProfileFormData } from '@/types';
 import { getData } from 'country-list';
@@ -29,8 +27,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProfileFormProps {
   userType: UserType;
-  userId: string;
+  userId: string; // Clerk user ID
   initialUsername?: string;
+  onComplete?: () => void; // Callback when profile is completed
 }
 
 interface CountryOption {
@@ -42,9 +41,9 @@ export default function ProfileForm({
   userType,
   userId,
   initialUsername = '',
+  onComplete,
 }: ProfileFormProps) {
-  // Store the initial username in a ref to use it for backend operations
-  // but don't display it in the form
+  // Store the initial username in a ref for backend operations
   const initialUsernameRef = useRef<string>(initialUsername);
 
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -59,7 +58,7 @@ export default function ProfileForm({
     tiktokUrl: '',
     isPublic: false,
     isCollaborated: false,
-    bio: '', // Add bio field
+    bio: '',
   });
 
   const [countries, setCountries] = useState<CountryOption[]>([]);
@@ -77,7 +76,6 @@ export default function ProfileForm({
   const usernameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const router = useRouter();
   const supabase = createClient();
 
   // Load country list
@@ -105,7 +103,7 @@ export default function ProfileForm({
         const { data, error } = await supabase
           .from('profiles')
           .select(
-            'username, first_name, last_name, phone_number, city, country, bio'
+            'username, first_name, last_name, phone_number, city, country, bio, profile_photo_url'
           )
           .eq('id', userId)
           .single();
@@ -131,6 +129,11 @@ export default function ProfileForm({
             country: data.country || '',
             bio: data.bio || '',
           }));
+
+          // Set profile photo preview if exists
+          if (data.profile_photo_url) {
+            setProfilePhotoPreview(data.profile_photo_url);
+          }
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -203,9 +206,9 @@ export default function ProfileForm({
     }
 
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      setError('Profile photo must be JPG, PNG, or GIF');
+      setError('Profile photo must be JPG, PNG, GIF, or WebP');
       return;
     }
 
@@ -369,11 +372,12 @@ export default function ProfileForm({
         duration: 3000,
       });
 
-      // Small delay to let user see the success message
-      setTimeout(() => {
-        router.push('/');
-        router.refresh();
-      }, 1000);
+      // Call the completion callback
+      if (onComplete) {
+        setTimeout(() => {
+          onComplete();
+        }, 1000);
+      }
     } catch (error: any) {
       // Dismiss loading toast and show error toast
       toast.dismiss(loadingToast);
@@ -538,6 +542,7 @@ export default function ProfileForm({
               value={formData.phoneNumber}
               onChange={handleInputChange}
               aria-describedby="phone-description"
+              placeholder="+1 (555) 123-4567"
             />
             <p id="phone-description" className="text-xs text-muted-foreground">
               Optional: Include country code for international numbers
@@ -556,6 +561,7 @@ export default function ProfileForm({
                 id="city"
                 value={formData.city}
                 onChange={handleInputChange}
+                placeholder="e.g., New York"
               />
             </div>
 
@@ -601,7 +607,7 @@ export default function ProfileForm({
                 <p className="text-xs text-muted-foreground">
                   Your bio helps potential collaborators understand your style
                   and content. Maximum 500 characters.{' '}
-                  {formData.bio ? `(${formData.bio.length}/500)` : ''}
+                  {formData.bio ? `(${formData.bio.length}/500)` : '(0/500)'}
                 </p>
               </div>
 
@@ -620,7 +626,9 @@ export default function ProfileForm({
                       type="text"
                       name="youtubeUrl"
                       id="youtubeUrl"
-                      value={formData.youtubeUrl}
+                      value={
+                        formData.youtubeUrl?.replace(/^https?:\/\//, '') || ''
+                      }
                       onChange={handleInputChange}
                       placeholder="youtube.com/channel/..."
                       className="rounded-l-none"
@@ -640,7 +648,9 @@ export default function ProfileForm({
                       type="text"
                       name="instagramUrl"
                       id="instagramUrl"
-                      value={formData.instagramUrl}
+                      value={
+                        formData.instagramUrl?.replace(/^https?:\/\//, '') || ''
+                      }
                       onChange={handleInputChange}
                       placeholder="instagram.com/..."
                       className="rounded-l-none"
@@ -660,7 +670,9 @@ export default function ProfileForm({
                       type="text"
                       name="tiktokUrl"
                       id="tiktokUrl"
-                      value={formData.tiktokUrl}
+                      value={
+                        formData.tiktokUrl?.replace(/^https?:\/\//, '') || ''
+                      }
                       onChange={handleInputChange}
                       placeholder="tiktok.com/@..."
                       className="rounded-l-none"
@@ -684,7 +696,10 @@ export default function ProfileForm({
                     className="mt-1.5"
                   />
                   <div className="space-y-1">
-                    <Label htmlFor="isPublic" className="font-medium">
+                    <Label
+                      htmlFor="isPublic"
+                      className="font-medium cursor-pointer"
+                    >
                       Public Profile
                     </Label>
                     <p className="text-sm text-muted-foreground">
@@ -703,7 +718,10 @@ export default function ProfileForm({
                     className="mt-1.5"
                   />
                   <div className="space-y-1">
-                    <Label htmlFor="isCollaborated" className="font-medium">
+                    <Label
+                      htmlFor="isCollaborated"
+                      className="font-medium cursor-pointer"
+                    >
                       Open to Collaboration
                     </Label>
                     <p className="text-sm text-muted-foreground">
