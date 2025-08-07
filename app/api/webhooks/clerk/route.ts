@@ -1,26 +1,24 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error(
-      'Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local'
-    );
+    console.error('CLERK_WEBHOOK_SECRET is not set');
+    return new Response('Webhook secret not configured', { status: 500 });
   }
 
-  // Get the headers - ADD AWAIT HERE
+  // Get the headers
   const headerPayload = await headers();
   const svix_id = headerPayload.get('svix-id');
   const svix_timestamp = headerPayload.get('svix-timestamp');
   const svix_signature = headerPayload.get('svix-signature');
 
-  // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error occured -- no svix headers', {
+    return new Response('Error occurred -- no svix headers', {
       status: 400,
     });
   }
@@ -29,12 +27,11 @@ export async function POST(req: Request) {
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
-  // Create a new Svix instance with your secret.
+  // Create a new Svix instance with your secret
   const wh = new Webhook(WEBHOOK_SECRET);
 
   let evt: WebhookEvent;
 
-  // Verify the payload with the headers
   try {
     evt = wh.verify(body, {
       'svix-id': svix_id,
@@ -43,42 +40,52 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error('Error verifying webhook:', err);
-    return new Response('Error occured', {
+    return new Response('Error occurred', {
       status: 400,
     });
   }
 
-  // Handle the webhook
   const { id } = evt.data;
   const eventType = evt.type;
 
   console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
-  console.log('Webhook body:', body);
 
-  // Create Supabase client with service role key - ADD AWAIT HERE
-  const supabase = await createClient();
+  // Create Supabase client with SERVICE ROLE key (not anon key)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
 
   try {
     if (eventType === 'user.created') {
       const { email_addresses, first_name, last_name, image_url } = evt.data;
 
-      // Generate username from email
       const primaryEmail = email_addresses?.[0]?.email_address;
       if (!primaryEmail) {
         console.error('No email found for user');
         return new Response('No email found', { status: 400 });
       }
 
+      // Generate a safe username
       const emailUsername = primaryEmail.split('@')[0] || 'user';
-      const safeUsername = `${emailUsername
+      const baseUsername = emailUsername
         .toLowerCase()
-        .replace(/[^a-z0-9_]/g, '_')}_${Math.random()
-        .toString(36)
-        .substring(2, 8)}`;
+        .replace(/[^a-z0-9_]/g, '_')
+        .substring(0, 15); // Limit length
+
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const safeUsername = `${baseUsername}_${randomSuffix}`;
 
       console.log('Creating profile for user:', id);
+      console.log('Generated username:', safeUsername);
 
-      // Insert profile into Supabase
+      // Insert profile into Supabase using service role
       const { data, error } = await supabase
         .from('profiles')
         .insert({
@@ -89,7 +96,7 @@ export async function POST(req: Request) {
           email: primaryEmail,
           profile_photo_url: image_url || null,
           is_profile_completed: false,
-          user_type: 'content_creator', // Default, user can change later
+          user_type: 'content_creator', // Default
           is_public: false,
           is_collaborated: false,
         })
@@ -97,7 +104,10 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error('Error creating profile:', error);
-        return new Response('Error creating profile', { status: 500 });
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        return new Response(`Error creating profile: ${error.message}`, {
+          status: 500,
+        });
       }
 
       console.log('Profile created successfully:', data);
@@ -135,7 +145,9 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error('Error updating profile:', error);
-        return new Response('Error updating profile', { status: 500 });
+        return new Response(`Error updating profile: ${error.message}`, {
+          status: 500,
+        });
       }
 
       console.log('Profile updated successfully');
@@ -144,12 +156,13 @@ export async function POST(req: Request) {
     if (eventType === 'user.deleted') {
       console.log('Deleting profile for user:', id);
 
-      // Delete profile and related data
       const { error } = await supabase.from('profiles').delete().eq('id', id);
 
       if (error) {
         console.error('Error deleting profile:', error);
-        return new Response('Error deleting profile', { status: 500 });
+        return new Response(`Error deleting profile: ${error.message}`, {
+          status: 500,
+        });
       }
 
       console.log('Profile deleted successfully');
@@ -158,6 +171,6 @@ export async function POST(req: Request) {
     return new Response('Webhook processed successfully', { status: 200 });
   } catch (error) {
     console.error('Webhook processing error:', error);
-    return new Response('Internal server error', { status: 500 });
+    return new Response(`Internal server error: ${error}`, { status: 500 });
   }
 }

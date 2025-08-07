@@ -8,12 +8,11 @@ import {
   useCallback,
 } from 'react';
 import { useUser } from '@clerk/nextjs';
-import type { UserResource } from '@clerk/types'; // Import correct Clerk UserResource type
+import type { UserResource } from '@clerk/types';
 import { createClient } from '@/lib/supabase/client';
 
-// Keep your existing Profile interface but update it
 interface Profile {
-  id: string; // Now stores Clerk user ID
+  id: string; // Clerk user ID
   username: string;
   first_name: string;
   last_name: string;
@@ -35,11 +34,13 @@ interface Profile {
 }
 
 interface AuthContextProps {
-  user: UserResource | null; // Use UserResource type from @clerk/types
+  user: UserResource | null;
   profile: Profile | null;
   loading: boolean;
   profileLoading: boolean;
   refreshProfile: () => Promise<void>;
+  // Add session property to match usage
+  session: { user: UserResource | null } | null;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfileLoading(true);
         console.log('Fetching profile for Clerk user:', userId);
 
+        // Use service role for this operation to bypass RLS
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -99,14 +101,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchProfile, user]);
 
+  // Create session object for compatibility
+  const session = user ? { user } : null;
+
   return (
     <AuthContext.Provider
       value={{
-        user: user || null, // Handle undefined by converting to null
+        user: user || null,
         profile,
         loading: !clerkLoaded,
         profileLoading,
         refreshProfile,
+        session, // Add session property
       }}
     >
       {children}

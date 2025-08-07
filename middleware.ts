@@ -1,6 +1,8 @@
+// middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Define routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/profile(.*)',
   '/profile-setup(.*)',
@@ -9,30 +11,38 @@ const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
 ]);
 
-// Explicitly exclude auth routes from protection
+// Define completely public routes
 const isPublicRoute = createRouteMatcher([
   '/',
-  '/auth(.*)', // This excludes all auth routes from protection
   '/creators(.*)',
   '/findwork(.*)',
   '/aboutus(.*)',
+  '/auth(.*)',
+  '/api/webhooks(.*)', // Important: Allow webhook routes
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
+  console.log('🔍 Middleware processing:', req.nextUrl.pathname);
 
-  // Don't protect public routes
+  // Always allow public routes
   if (isPublicRoute(req)) {
+    console.log('✅ Public route, allowing access');
     return NextResponse.next();
   }
 
-  // Protect routes that require authentication
+  // Check authentication for protected routes
   if (isProtectedRoute(req)) {
+    const { userId } = await auth();
+
     if (!userId) {
-      // Redirect to auth page if not authenticated
+      console.log('❌ Protected route requires auth, redirecting to /auth');
       const authUrl = new URL('/auth', req.url);
+      // Add the current path as a redirect parameter
+      authUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
       return NextResponse.redirect(authUrl);
     }
+
+    console.log('✅ Authenticated user accessing protected route');
   }
 
   return NextResponse.next();
